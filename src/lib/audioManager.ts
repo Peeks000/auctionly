@@ -13,7 +13,7 @@ class AtmosphereAudioManager {
   private isInitialized = false;
   private userExplicitlyPaused = false;
   private hasAutoStarted = false;
-  private interactionListenersAttached = false;
+  private activeTriggerHandler: ((e: Event) => void) | null = null;
 
   private constructor() {
     if (typeof window !== "undefined") {
@@ -67,8 +67,9 @@ class AtmosphereAudioManager {
 
   /**
    * Attempts immediate autoplay when site opens.
-   * If browser autoplay policy blocks unprompted audio, automatically binds to the first user
-   * interaction (scroll, click, touch, keydown, wheel) so playback begins seamlessly.
+   * If browser autoplay policy blocks unprompted audio, attaches persistent capture listeners
+   * on the window and document so the very first interaction (click, tap, keypress, pointerdown)
+   * immediately begins smooth playback.
    */
   public async startAutoplay(): Promise<void> {
     if (this.hasAutoStarted || this.userExplicitlyPaused || typeof window === "undefined") return;
@@ -77,25 +78,28 @@ class AtmosphereAudioManager {
     if (!this.audio) return;
 
     try {
-      // Try playing immediately
+      // 1. Try direct playback on open
       await this.audio.play();
       this.isPlaying = true;
       this.notify();
       this.fadeIn();
     } catch {
-      // Browser blocked autoplay without user gesture.
-      // Attach fallback interaction triggers on window.
+      // 2. Direct unmuted autoplay prevented by browser policy.
+      // Attach capture listeners on window and document so any first user gesture unlocks sound.
       this.attachInteractionTrigger();
     }
   }
 
   private attachInteractionTrigger() {
-    if (this.interactionListenersAttached || typeof window === "undefined") return;
-    this.interactionListenersAttached = true;
+    if (this.activeTriggerHandler || typeof window === "undefined") return;
 
-    const triggerPlay = async () => {
-      if (this.userExplicitlyPaused || this.isPlaying) {
-        this.removeInteractionTrigger(triggerPlay);
+    const onUserGesture = async (e: Event) => {
+      if (this.userExplicitlyPaused) {
+        this.removeInteractionTrigger();
+        return;
+      }
+      if (this.isPlaying) {
+        this.removeInteractionTrigger();
         return;
       }
 
@@ -107,30 +111,55 @@ class AtmosphereAudioManager {
         this.isPlaying = true;
         this.notify();
         this.fadeIn();
+        // Successfully started audio! Clean up listeners
+        this.removeInteractionTrigger();
       } catch (err) {
-        console.warn("[AtmosphereAudio] Interaction play attempt:", err);
-      } finally {
-        this.removeInteractionTrigger(triggerPlay);
+        // If this specific event wasn't recognized as a valid user gesture by browser (e.g. non-qualifying event),
+        // DO NOT remove the listeners. Keep waiting for the next click/tap!
+        console.warn("[AtmosphereAudio] Autoplay attempt on", e.type, "pending user activation:", err);
       }
     };
 
-    const events = ["pointerdown", "click", "keydown", "scroll", "touchstart", "wheel"];
+    this.activeTriggerHandler = onUserGesture;
+
+    const events = [
+      "pointerdown",
+      "mousedown",
+      "click",
+      "touchstart",
+      "touchend",
+      "keydown",
+    ];
+
     events.forEach((evt) => {
-      window.addEventListener(evt, triggerPlay, { once: true, passive: true });
+      window.addEventListener(evt, onUserGesture, { capture: true, passive: true });
+      document.addEventListener(evt, onUserGesture, { capture: true, passive: true });
     });
   }
 
-  private removeInteractionTrigger(handler: () => void) {
-    if (typeof window === "undefined") return;
-    const events = ["pointerdown", "click", "keydown", "scroll", "touchstart", "wheel"];
+  private removeInteractionTrigger() {
+    if (!this.activeTriggerHandler || typeof window === "undefined") return;
+    const handler = this.activeTriggerHandler;
+    this.activeTriggerHandler = null;
+
+    const events = [
+      "pointerdown",
+      "mousedown",
+      "click",
+      "touchstart",
+      "touchend",
+      "keydown",
+    ];
+
     events.forEach((evt) => {
-      window.removeEventListener(evt, handler);
+      window.removeEventListener(evt, handler, { capture: true } as EventListenerOptions);
+      document.removeEventListener(evt, handler, { capture: true } as EventListenerOptions);
     });
-    this.interactionListenersAttached = false;
   }
 
   public async play(): Promise<boolean> {
     this.userExplicitlyPaused = false;
+    this.removeInteractionTrigger();
     this.init();
     if (!this.audio) return false;
 
@@ -150,6 +179,7 @@ class AtmosphereAudioManager {
 
   public pause(): void {
     this.userExplicitlyPaused = true;
+    this.removeInteractionTrigger();
     if (!this.audio) return;
     this.fadeOut(() => {
       if (this.audio) {
@@ -171,6 +201,13 @@ class AtmosphereAudioManager {
   private fadeIn() {
     if (!this.audio) return;
     if (this.fadeInterval) clearInterval(this.fadeInterval);
+
+    // Start with immediate audible presence (0.2), then smoothly swell to target volume
+    if (this.currentVolume < 0.2) {
+      this.currentVolume = 0.2;
+      this.audio.volume = this.currentVolume;
+      this.notify();
+    }
 
     const step = 0.05;
     this.fadeInterval = window.setInterval(() => {
