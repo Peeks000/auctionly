@@ -1,0 +1,22 @@
+{
+  "project": "AUCTIONLY",
+  "version": "1.0.0-beta",
+  "mode": "phased-gsd",
+  "workflow": {
+    "auto_verify": true,
+    "concurrency_testing": true,
+    "tracer_first": true,
+    "reversibility_checkpoints": true
+  },
+  "stack": {
+    "framework": "Next.js 15 (App Router)",
+    "language": "TypeScript (strict)",
+    "styling": "Tailwind CSS",
+    "3d": "Three.js / React Three Fiber",
+    "database": "Supabase PostgreSQL",
+    "auth": "Supabase Auth",
+    "storage": "Supabase Storage",
+    "realtime": "Supabase Realtime",
+    "payments": "Razorpay (Test Mode)"
+  }
+}
