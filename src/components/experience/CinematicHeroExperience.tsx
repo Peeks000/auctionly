@@ -86,6 +86,7 @@ export const CinematicHeroExperience: React.FC = () => {
   // Hero interactive layers
   const heroBackdropRef = useRef<HTMLDivElement>(null);
   const revealLayerRef = useRef<HTMLDivElement>(null);
+  const glowLayerRef = useRef<HTMLDivElement>(null);
   const targetPos = useRef({ x: -1000, y: -1000 });
   const targetOpacity = useRef(0);
   const heroUiRef = useRef<HTMLDivElement>(null);
@@ -113,22 +114,18 @@ export const CinematicHeroExperience: React.FC = () => {
       const stage = stageRef.current;
       if (!stage) return;
       const rect = stage.getBoundingClientRect();
-
-      if (
+      const inHero =
         e.clientX >= rect.left &&
         e.clientX <= rect.right &&
         e.clientY >= rect.top &&
-        e.clientY <= rect.bottom
-      ) {
+        e.clientY <= rect.bottom;
+
+      if (inHero) {
         targetPos.current = {
           x: e.clientX - rect.left,
           y: e.clientY - rect.top,
         };
         targetOpacity.current = 1;
-        // Immediate first jump if starting from off-screen
-        if (revealLayerRef.current && targetOpacity.current === 1) {
-          revealLayerRef.current.style.opacity = "1";
-        }
       } else {
         targetOpacity.current = 0;
       }
@@ -141,13 +138,11 @@ export const CinematicHeroExperience: React.FC = () => {
     window.addEventListener("mousemove", onMove, { passive: true });
     window.addEventListener("pointermove", onMove, { passive: true });
     document.addEventListener("mouseleave", onLeave, { passive: true });
-    window.addEventListener("blur", onLeave, { passive: true });
 
     return () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("mouseleave", onLeave);
-      window.removeEventListener("blur", onLeave);
     };
   }, []);
 
@@ -161,20 +156,38 @@ export const CinematicHeroExperience: React.FC = () => {
     let currentOpacity = 0;
 
     const render = () => {
+      // Instant first-frame initialization when cursor enters hero from off-screen
+      if (currentX < -500 && targetPos.current.x > -500) {
+        currentX = targetPos.current.x;
+        currentY = targetPos.current.y;
+      }
+
       // Smooth lerp easing towards cursor position
-      currentX += (targetPos.current.x - currentX) * 0.15;
-      currentY += (targetPos.current.y - currentY) * 0.15;
-      currentOpacity += (targetOpacity.current - currentOpacity) * 0.12;
+      currentX += (targetPos.current.x - currentX) * 0.18;
+      currentY += (targetPos.current.y - currentY) * 0.18;
+      currentOpacity += (targetOpacity.current - currentOpacity) * 0.14;
 
       const layer = revealLayerRef.current;
-      if (layer) {
-        if (currentOpacity < 0.005) {
-          layer.style.opacity = "0";
-        } else {
-          layer.style.opacity = currentOpacity.toFixed(3);
-          const mask = `radial-gradient(circle 260px at ${currentX.toFixed(1)}px ${currentY.toFixed(1)}px, black 0%, black 140px, rgba(0, 0, 0, 0.45) 210px, transparent 260px)`;
+      const glow = glowLayerRef.current;
+
+      if (currentOpacity < 0.005) {
+        if (layer) layer.style.opacity = "0";
+        if (glow) glow.style.opacity = "0";
+      } else {
+        const opacityStr = currentOpacity.toFixed(3);
+        const posX = currentX.toFixed(1);
+        const posY = currentY.toFixed(1);
+
+        if (layer) {
+          layer.style.opacity = opacityStr;
+          const mask = `radial-gradient(circle 260px at ${posX}px ${posY}px, black 0%, black 140px, rgba(0, 0, 0, 0.45) 210px, transparent 260px)`;
           layer.style.webkitMaskImage = mask;
           layer.style.maskImage = mask;
+        }
+
+        if (glow) {
+          glow.style.opacity = opacityStr;
+          glow.style.background = `radial-gradient(circle 260px at ${posX}px ${posY}px, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0.10) 160px, rgba(212, 175, 55, 0.04) 220px, transparent 260px)`;
         }
       }
 
@@ -320,11 +333,18 @@ export const CinematicHeroExperience: React.FC = () => {
           revealLayerRef.current.style.transform = `scale(${scale.toFixed(4)})`;
           revealLayerRef.current.style.display = "block";
         }
+        if (glowLayerRef.current) {
+          glowLayerRef.current.style.transform = `scale(${scale.toFixed(4)})`;
+          glowLayerRef.current.style.display = "block";
+        }
       } else {
         backdrop.style.opacity = "0";
         backdrop.style.display = "none";
         if (revealLayerRef.current) {
           revealLayerRef.current.style.display = "none";
+        }
+        if (glowLayerRef.current) {
+          glowLayerRef.current.style.display = "none";
         }
       }
     }
@@ -508,16 +528,24 @@ export const CinematicHeroExperience: React.FC = () => {
             />
           </div>
 
-          {/* Atmospheric Lighting & Volumetric Rays (Entering from top-right across bust) */}
-          <div className="absolute inset-0 z-10 bg-[linear-gradient(225deg,rgba(255,225,160,0.14)_0%,rgba(212,175,55,0.05)_26%,transparent_60%)] mix-blend-screen" />
-          <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_50%_40%,rgba(212,175,55,0.08)_0%,transparent_50%)]" />
-
           {/* Edge Vignettes for Gallery Ambience */}
           <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#000000]/80 via-[#000000]/40 to-transparent" />
           <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#000000]/85 via-[#000000]/45 to-transparent" />
           <div className="absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-[#000000]/60 to-transparent" />
           <div className="absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-[#000000]/60 to-transparent" />
         </div>
+
+        {/* ====================================================================
+            LAYER 1.3: Soft Feathered Luxury Gold Ambient Glow Halo
+           ==================================================================== */}
+        <div
+          ref={glowLayerRef}
+          className="absolute inset-0 z-[11] pointer-events-none overflow-hidden"
+          style={{
+            transformOrigin: "50.5% 38%",
+            opacity: 0,
+          }}
+        />
 
         {/* ====================================================================
             LAYER 1.5: Cursor-Following Spotlight Character Reveal Layer (BG_IMAGEs_2)
@@ -551,10 +579,6 @@ export const CinematicHeroExperience: React.FC = () => {
               className="object-cover object-center"
             />
           </div>
-
-          {/* Atmospheric Lighting matching base */}
-          <div className="absolute inset-0 z-10 bg-[linear-gradient(225deg,rgba(255,225,160,0.14)_0%,rgba(212,175,55,0.05)_26%,transparent_60%)] mix-blend-screen" />
-          <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_50%_40%,rgba(212,175,55,0.08)_0%,transparent_50%)]" />
 
           {/* Matching Edge Vignettes */}
           <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#000000]/80 via-[#000000]/40 to-transparent" />
