@@ -31,10 +31,20 @@ class AtmosphereAudioManager {
   private init() {
     if (this.isInitialized || typeof window === "undefined") return;
     try {
-      this.audio = new Audio("/music/Calculated_Grace.mp3");
+      this.audio = new Audio(encodeURI("/music/Alicia (Violin).mp3"));
       this.audio.loop = true;
       this.audio.volume = 0;
       this.audio.preload = "auto";
+
+      this.audio.addEventListener("error", () => {
+        if (this.audio && !this.audio.src.includes("alicia-violin.mp3")) {
+          this.audio.src = "/music/alicia-violin.mp3";
+          this.audio.load();
+          if (this.isPlaying) {
+            this.audio.play().catch(() => {});
+          }
+        }
+      });
 
       this.audio.addEventListener("ended", () => {
         if (this.isPlaying && this.audio) {

@@ -68,7 +68,7 @@ export const AtmosphereSoundController: React.FC<{ className?: string }> = ({ cl
             {isPlaying ? "ATMOSPHERE ACTIVE" : "PLAY ATMOSPHERE"}
           </span>
           <span className="text-[8px] tracking-[0.18em] uppercase text-luxury-champagne/60 font-light truncate max-w-[130px]">
-            Calculated Grace
+            Alicia (Violin)
           </span>
         </div>
 
