@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { calculateAuctionBreakdown, formatINR, parseINRToPaisa } from "../src/lib/currency";
+import { generateTestPaymentSignature, verifyRazorpayPaymentSignature } from "../src/lib/razorpay";
 
 /**
  * Concurrency & High-Assurance Auction Engine Simulation Test
@@ -96,5 +97,18 @@ describe("AUCTIONLY Auction Engine & Concurrency Unit Suite", () => {
 
     // New end time is extended by 2 minutes
     expect(endTime - bidTime).toBeGreaterThanOrEqual(2.9 * 60 * 1000);
+  });
+
+  it("cryptographically verifies Razorpay payment signatures with timing-safe HMAC-SHA256", () => {
+    const orderId = "order_test_881920391";
+    const paymentId = "pay_test_992102931";
+    const validSignature = generateTestPaymentSignature(orderId, paymentId);
+
+    // Valid signature must pass
+    expect(verifyRazorpayPaymentSignature({ orderId, paymentId, signature: validSignature })).toBe(true);
+
+    // Tampered signature or orderId must fail
+    expect(verifyRazorpayPaymentSignature({ orderId: "order_test_tampered", paymentId, signature: validSignature })).toBe(false);
+    expect(verifyRazorpayPaymentSignature({ orderId, paymentId, signature: "invalid_hex_signature" })).toBe(false);
   });
 });

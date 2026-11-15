@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import ModelViewer3D from "@/components/three/ModelViewer3D";
+import RazorpayCheckoutModal from "@/components/payment/RazorpayCheckoutModal";
 import { mockListings } from "@/lib/data/mockCatalogue";
 import { formatINR, calculateAuctionBreakdown } from "@/lib/currency";
 import {
@@ -35,6 +36,8 @@ export default function LotDetailPage() {
   const [biddingError, setBiddingError] = useState<string | null>(null);
   const [biddingSuccess, setBiddingSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [checkoutOrderType, setCheckoutOrderType] = useState<"buy_now" | "auction_win">("buy_now");
   const [timeLeft, setTimeLeft] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"provenance" | "condition" | "shipping">("provenance");
 
@@ -316,18 +319,33 @@ export default function LotDetailPage() {
             </form>
 
             {/* Buy Now Option if lot supports fixed price */}
-            {listing.buy_now_price && (
+            {listing.buy_now_price ? (
               <div className="pt-4 border-t border-luxury-champagne/15 flex flex-col gap-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-luxury-champagne uppercase tracking-luxury">Acquire Immediately</span>
                   <span className="font-mono text-base font-semibold text-luxury-ivory">{formatINR(listing.buy_now_price)}</span>
                 </div>
                 <button
-                  onClick={() => alert(`Redirecting to Razorpay Test Mode checkout for ${formatINR(listing.buy_now_price!)}...`)}
+                  onClick={() => {
+                    setCheckoutOrderType("buy_now");
+                    setIsCheckoutOpen(true);
+                  }}
                   className="w-full py-3 bg-luxury-dark hover:bg-luxury-elevated border border-luxury-gold/50 text-luxury-ivory hover:text-luxury-gold font-medium uppercase tracking-luxury text-xs transition-all flex items-center justify-center gap-2"
                 >
                   <Lock size={14} />
-                  <span>Buy Now (Dual-Sale Protected)</span>
+                  <span>Buy Now via Razorpay (Dual-Sale Protected)</span>
+                </button>
+              </div>
+            ) : (
+              <div className="pt-4 border-t border-luxury-champagne/15 flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    setCheckoutOrderType("auction_win");
+                    setIsCheckoutOpen(true);
+                  }}
+                  className="w-full py-2.5 bg-luxury-black hover:bg-luxury-dark border border-luxury-subtle hover:border-luxury-gold/40 text-luxury-champagne hover:text-luxury-ivory text-xs uppercase tracking-luxury transition-all flex items-center justify-center gap-2"
+                >
+                  <span>Instant Settle / Test Razorpay Checkout</span>
                 </button>
               </div>
             )}
@@ -355,6 +373,17 @@ export default function LotDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Razorpay Test Mode Checkout Modal */}
+      <RazorpayCheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        listing={listing}
+        orderType={checkoutOrderType}
+        onSuccess={(result) => {
+          setBiddingSuccess(`Payment confirmed via Razorpay (${result.paymentId}). Invoice ${result.invoiceNumber} generated.`);
+        }}
+      />
     </div>
   );
 }
