@@ -70,7 +70,7 @@ export const AiConcierge: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 max-w-[calc(100vw-2rem)]">
       {/* Floating Toggle Button */}
       {!isOpen && (
         <button
@@ -87,7 +87,7 @@ export const AiConcierge: React.FC = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="w-[360px] sm:w-[400px] h-[520px] bg-luxury-black/95 border border-luxury-gold/40 rounded-sm shadow-2xl backdrop-blur-xl flex flex-col justify-between overflow-hidden animate-fadeIn">
+        <div className="w-[calc(100vw-2rem)] sm:w-[380px] max-w-[400px] h-[480px] sm:h-[520px] bg-luxury-black/95 border border-luxury-gold/40 rounded-sm shadow-2xl backdrop-blur-xl flex flex-col justify-between overflow-hidden animate-fadeIn">
           {/* Header */}
           <div className="bg-luxury-dark/90 p-4 border-b border-luxury-champagne/15 flex items-center justify-between">
             <div className="flex items-center gap-2.5">

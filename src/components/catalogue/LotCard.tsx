@@ -21,6 +21,44 @@ export const LotCard: React.FC<LotCardProps> = ({ listing, priority = false }) =
   const isLive = auction?.is_live;
 
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem("auctionly_watchlist");
+      if (saved) {
+        const list = JSON.parse(saved);
+        if (Array.isArray(list) && list.includes(listing.id)) {
+          setBookmarked(true);
+        }
+      }
+    } catch {
+      // ignore local storage errors
+    }
+  }, [listing.id]);
+
+  const toggleBookmark = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const saved = localStorage.getItem("auctionly_watchlist");
+      let list: string[] = saved ? JSON.parse(saved) : [];
+      if (!Array.isArray(list)) list = [];
+
+      let nextState = false;
+      if (list.includes(listing.id)) {
+        list = list.filter((id) => id !== listing.id);
+        nextState = false;
+      } else {
+        list.push(listing.id);
+        nextState = true;
+      }
+      localStorage.setItem("auctionly_watchlist", JSON.stringify(list));
+      setBookmarked(nextState);
+      window.dispatchEvent(new Event("storage"));
+    } catch {
+      setBookmarked(!bookmarked);
+    }
+  };
+
+  useEffect(() => {
     if (!auction?.end_time) return;
 
     const calculateTime = () => {
@@ -83,7 +121,7 @@ export const LotCard: React.FC<LotCardProps> = ({ listing, priority = false }) =
             )}
 
             <button
-              onClick={() => setBookmarked(!bookmarked)}
+              onClick={toggleBookmark}
               className="p-1.5 bg-luxury-black/70 backdrop-blur-md hover:bg-luxury-gold hover:text-luxury-black text-luxury-champagne border border-luxury-champagne/20 transition-colors pointer-events-auto"
               aria-label="Add lot to watchlist"
             >

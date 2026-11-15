@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatINR } from "@/lib/currency";
@@ -17,10 +17,11 @@ import {
   Clock,
   ArrowRight,
   Maximize2,
+  Info,
 } from "lucide-react";
 
 export default function LiveAuctionRoom() {
-  const lot = mockListings[2]; // Patek Philippe 2499 or Chola Bronze
+  const lot = mockListings[2] || mockListings[0]; // Patek Philippe 2499 or Chola Bronze
   const [currentBidPaisa, setCurrentBidPaisa] = useState(3800000000); // ₹3,80,00,000
   const [bidIncrementPaisa, setBidIncrementPaisa] = useState(50000000); // ₹50,00,000
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -28,9 +29,9 @@ export default function LiveAuctionRoom() {
   const [recentBids, setRecentBids] = useState<
     { id: string; bidder: string; amountPaisa: number; time: string; location: string }[]
   >([
-    { id: "1", bidder: "Paddle #412", amountPaisa: 3800000000, time: "Just now", location: "Mumbai Room" },
-    { id: "2", bidder: "Paddle #809", amountPaisa: 3750000000, time: "1 min ago", location: "London Phone" },
-    { id: "3", bidder: "Paddle #102", amountPaisa: 3700000000, time: "2 mins ago", location: "Geneva Online" },
+    { id: "1", bidder: "Paddle #412", amountPaisa: 3800000000, time: "Just now", location: "Mumbai Saleroom" },
+    { id: "2", bidder: "Paddle #809", amountPaisa: 3750000000, time: "1 min ago", location: "London Phone Desk" },
+    { id: "3", bidder: "Paddle #102", amountPaisa: 3700000000, time: "2 mins ago", location: "Geneva Online Desk" },
   ]);
 
   const [auctioneerMessage, setAuctioneerMessage] = useState(
@@ -48,7 +49,7 @@ export default function LiveAuctionRoom() {
       bidder: "You (Paddle #771)",
       amountPaisa: nextAmount,
       time: "Just now",
-      location: "Verified Online Bidder",
+      location: "Verified Private Desk",
     };
 
     setRecentBids([newBid, ...recentBids]);
@@ -58,7 +59,7 @@ export default function LiveAuctionRoom() {
   // Auctioneer Console: Fair Warning
   const handleFairWarning = () => {
     setAuctionState("fair_warning");
-    setAuctioneerMessage(`Fair warning! At ${formatINR(currentBidPaisa)} for the Patek Philippe 2499... going once, going twice...`);
+    setAuctioneerMessage(`Fair warning! At ${formatINR(currentBidPaisa)} for ${lot.title}... going once, going twice...`);
   };
 
   // Auctioneer Console: Hammer Down
@@ -69,27 +70,39 @@ export default function LiveAuctionRoom() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+      {/* Simulation Disclosure Notice */}
+      <div className="bg-amber-950/60 border border-amber-800/80 p-3.5 rounded-sm text-xs text-amber-200 flex items-start gap-2.5">
+        <Info size={16} className="text-amber-400 shrink-0 mt-0.5" />
+        <div>
+          <strong className="font-semibold uppercase tracking-wider block">Interactive Demonstration Saleroom</strong>
+          <span>
+            This interactive stage demonstrates AUCTIONLY’s live gala mechanics, rostra call-outs, fair warning gavel sequences, and real-time proxy increments. No real monetary transactions occur in this demonstration environment.
+          </span>
+        </div>
+      </div>
+
       {/* Top Banner: Gala Broadcast Status */}
       <div className="flex flex-col sm:flex-row items-center justify-between bg-luxury-dark/90 p-4 border border-luxury-champagne/20 rounded-sm gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1 bg-status-live text-white text-xs uppercase tracking-wider font-semibold">
-            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-            <span>Official Live Gala Broadcast</span>
+          <div className="flex items-center gap-2 px-3 py-1 bg-amber-600/90 text-black text-xs uppercase tracking-wider font-semibold">
+            <span className="w-2 h-2 rounded-full bg-black animate-ping" />
+            <span>Interactive Gala Simulation</span>
           </div>
           <span className="hidden md:inline-block text-xs text-luxury-champagne">
-            The Imperial Heritage Evening Sale • Lot 12 of 34
+            Imperial Evening Sale • Lot 12 of 34
           </span>
         </div>
 
         <div className="flex items-center gap-4 text-xs text-luxury-champagne">
-          <div className="flex items-center gap-1.5">
-            <Users size={14} className="text-luxury-gold" />
-            <span>428 Attendees Active</span>
+          <div className="flex items-center gap-1.5 text-luxury-muted">
+            <Radio size={14} className="text-luxury-gold animate-pulse" />
+            <span>Simulated Rostra Feed</span>
           </div>
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             className="p-1.5 bg-luxury-black border border-luxury-subtle hover:text-luxury-gold transition-colors"
             title="Toggle Audio Feed"
+            aria-label="Toggle audio"
           >
             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
@@ -108,7 +121,7 @@ export default function LiveAuctionRoom() {
             <div className="relative z-10 flex flex-col items-center text-center p-6 max-w-lg">
               <div className="relative w-36 h-36 rounded-full overflow-hidden border-2 border-luxury-gold p-1 mb-4 shadow-[0_0_30px_rgba(198,166,106,0.3)]">
                 <Image
-                  src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
+                  src={lot.primary_image_url || "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"}
                   alt="Auctioneer Presentation Lot"
                   fill
                   className="object-cover"
@@ -123,125 +136,103 @@ export default function LiveAuctionRoom() {
               <h3 className="font-serif text-xl sm:text-2xl text-luxury-ivory font-medium">
                 {lot.title}
               </h3>
-              <p className="text-xs text-luxury-champagne/80 mt-1 max-w-md">
-                Fourth Series in 18K Yellow Gold. Preserved in museum condition with Patek Philippe archives certificate.
+              <p className="text-xs text-luxury-champagne/80 mt-1 max-w-md line-clamp-2">
+                {lot.short_description}
               </p>
             </div>
 
-            {/* Auctioneer Speech Bubble Overlay */}
-            <div className="absolute bottom-4 left-4 right-4 bg-luxury-black/90 backdrop-blur-md p-4 border border-luxury-gold/40 flex items-start gap-3">
-              <Gavel size={20} className="text-luxury-gold shrink-0 mt-0.5 animate-gavel-strike" />
-              <div>
-                <span className="text-[10px] tracking-luxury uppercase text-luxury-gold block font-semibold">
-                  Auctioneer Podium
-                </span>
-                <p className="text-xs sm:text-sm font-serif text-luxury-ivory italic">
+            {/* Auctioneer Live Status Strip */}
+            <div className="absolute bottom-4 left-4 right-4 bg-luxury-black/90 backdrop-blur-md p-4 border border-luxury-champagne/20 flex items-center justify-between z-20">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-status-live animate-ping" />
+                <span className="font-serif text-sm text-luxury-ivory italic">
                   &ldquo;{auctioneerMessage}&rdquo;
-                </p>
+                </span>
               </div>
+              <span className="text-[10px] font-mono uppercase text-luxury-gold tracking-widest hidden sm:inline">
+                Auctioneer Desk
+              </span>
             </div>
-
-            {/* Fair Warning Banner */}
-            {auctionState === "fair_warning" && (
-              <div className="absolute top-4 left-4 right-4 bg-status-live/90 text-white p-2.5 text-center uppercase tracking-widest text-xs font-bold animate-pulse shadow-lg">
-                ⚠️ Fair Warning — The Lot is About to Close!
-              </div>
-            )}
-
-            {/* Hammer Down Sold Banner */}
-            {auctionState === "hammer_down" && (
-              <div className="absolute inset-0 bg-luxury-black/95 flex flex-col items-center justify-center p-6 text-center z-20">
-                <Gavel size={54} className="text-luxury-gold mb-4 animate-bounce" />
-                <h2 className="font-serif text-4xl text-luxury-ivory font-bold tracking-tight">
-                  HAMMER DOWN • SOLD
-                </h2>
-                <p className="font-mono text-2xl text-luxury-gold font-semibold mt-2">
-                  {formatINR(currentBidPaisa)}
-                </p>
-                <p className="text-xs uppercase tracking-luxury text-luxury-champagne mt-2">
-                  Proceeding to next sequential lot...
-                </p>
-              </div>
-            )}
           </div>
 
-          {/* Auctioneer Management Bar (Simulated Controls for Demonstration) */}
-          <div className="bg-luxury-dark/70 border border-luxury-subtle/50 p-4 rounded-sm flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-xs text-luxury-champagne">
-              <ShieldCheck size={16} className="text-luxury-gold" />
-              <span className="uppercase tracking-luxury font-medium text-[11px]">Auctioneer Master Controls</span>
-            </div>
+          {/* Interactive Simulation Controls */}
+          <div className="card-luxury p-5 flex flex-col gap-3">
+            <span className="text-[10px] uppercase tracking-luxury text-luxury-gold font-semibold">
+              Simulation Console (Test Saleroom Mechanics)
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button
+                onClick={handlePlaceLiveBid}
+                disabled={auctionState === "hammer_down"}
+                className="py-3 bg-luxury-gold hover:bg-luxury-gold-hover disabled:opacity-40 text-luxury-black font-semibold text-xs uppercase tracking-luxury transition-all flex items-center justify-center gap-1.5 shadow-md"
+              >
+                <Gavel size={14} />
+                <span>Bid {formatINR(currentBidPaisa + bidIncrementPaisa)}</span>
+              </button>
 
-            <div className="flex items-center gap-3">
               <button
                 onClick={handleFairWarning}
                 disabled={auctionState === "hammer_down"}
-                className="px-3 py-1.5 bg-amber-900/60 hover:bg-amber-800 text-amber-200 text-xs uppercase tracking-wider font-medium border border-amber-600/50 transition-colors"
+                className="py-3 bg-luxury-dark hover:bg-luxury-elevated border border-luxury-champagne/30 text-luxury-ivory text-xs uppercase tracking-luxury transition-all"
               >
-                Call Fair Warning
+                Trigger Fair Warning
               </button>
+
               <button
                 onClick={handleHammerDown}
-                disabled={auctionState === "hammer_down"}
-                className="px-3 py-1.5 bg-red-900/70 hover:bg-red-800 text-red-200 text-xs uppercase tracking-wider font-medium border border-red-600/50 transition-colors"
+                className="py-3 bg-red-950/80 hover:bg-red-900 border border-red-700 text-red-200 text-xs uppercase tracking-luxury transition-all"
               >
-                Hammer Down (Close Lot)
+                Simulate Gavel Drop (Sold)
               </button>
             </div>
           </div>
         </div>
 
-        {/* Right Bidding Floor & Real-Time Feed */}
+        {/* Right Bidding Feed & Paddle Information */}
         <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="card-luxury p-6 flex flex-col gap-6">
+          {/* Current Bid Display */}
+          <div className="card-luxury p-6 flex flex-col gap-4">
             <div>
               <span className="text-[10px] uppercase tracking-luxury text-luxury-muted block">
-                Current Floor Price
+                Current Bid on the Floor
               </span>
-              <span className="font-mono text-3xl font-bold text-luxury-ivory">
+              <span className="font-mono text-3xl sm:text-4xl font-bold text-luxury-gold block mt-1">
                 {formatINR(currentBidPaisa)}
-              </span>
-              <span className="text-[11px] text-luxury-champagne/70 block mt-1">
-                Next Ask: {formatINR(currentBidPaisa + bidIncrementPaisa)}
               </span>
             </div>
 
-            {/* One-Click Live Bid Button */}
-            <button
-              onClick={handlePlaceLiveBid}
-              disabled={auctionState === "hammer_down"}
-              className="w-full py-4 bg-luxury-gold hover:bg-luxury-goldLight disabled:opacity-40 text-luxury-black font-semibold text-xs uppercase tracking-luxury transition-all shadow-[0_10px_25px_rgba(198,166,106,0.3)] flex items-center justify-center gap-2"
-            >
-              <Gavel size={18} />
-              <span>Bid {formatINR(currentBidPaisa + bidIncrementPaisa)}</span>
-            </button>
+            <div className="border-t border-luxury-subtle/40 pt-3 flex justify-between text-xs text-luxury-champagne/70">
+              <span>Next Asking Bid:</span>
+              <span className="font-mono font-medium text-luxury-ivory">
+                {formatINR(currentBidPaisa + bidIncrementPaisa)}
+              </span>
+            </div>
+          </div>
 
-            {/* Live Real-Time Bids Feed */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between text-xs uppercase tracking-luxury text-luxury-champagne/80 border-b border-luxury-champagne/15 pb-2">
-                <span>Real-Time Log</span>
-                <span>Location</span>
-              </div>
+          {/* Live Saleroom Bids History */}
+          <div className="card-luxury p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-luxury-champagne/15 pb-2">
+              <span className="text-xs uppercase tracking-luxury text-luxury-ivory font-medium">
+                Saleroom Bid Feed
+              </span>
+              <span className="text-[10px] font-mono text-luxury-muted">Paddle Ledger</span>
+            </div>
 
-              <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
-                {recentBids.map((b) => (
-                  <div
-                    key={b.id}
-                    className="p-3 bg-luxury-black/60 border border-luxury-subtle/30 rounded-sm flex items-center justify-between text-xs animate-fadeIn"
-                  >
-                    <div>
-                      <span className="font-mono font-medium text-luxury-ivory block">
-                        {formatINR(b.amountPaisa)}
-                      </span>
-                      <span className="text-[10px] text-luxury-gold">{b.bidder}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] text-luxury-muted block">{b.time}</span>
-                      <span className="text-[10px] text-luxury-champagne/60">{b.location}</span>
-                    </div>
+            <div className="flex flex-col gap-2.5 max-h-64 overflow-y-auto">
+              {recentBids.map((b) => (
+                <div
+                  key={b.id}
+                  className="flex items-center justify-between p-2.5 bg-luxury-dark/60 border border-luxury-subtle/30 rounded-sm text-xs"
+                >
+                  <div>
+                    <span className="text-luxury-ivory font-medium block">{b.bidder}</span>
+                    <span className="text-[10px] text-luxury-muted">{b.location} • {b.time}</span>
                   </div>
-                ))}
-              </div>
+                  <span className="font-mono font-semibold text-luxury-gold">
+                    {formatINR(b.amountPaisa)}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

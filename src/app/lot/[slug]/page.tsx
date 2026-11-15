@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import ModelViewer3D from "@/components/three/ModelViewer3D";
 import RazorpayCheckoutModal from "@/components/payment/RazorpayCheckoutModal";
@@ -26,29 +26,76 @@ export default function LotDetailPage() {
   const params = useParams();
   const slug = params?.slug as string;
 
-  // Retrieve lot from catalogue
-  const listing = mockListings.find((l) => l.slug === slug) || mockListings[0];
+  // Retrieve lot from catalogue; 404 if not found
+  const listing = mockListings.find((l) => l.slug === slug);
+  if (!listing) {
+    notFound();
+  }
+
   const auction = listing.auction;
 
   const [currentPrice, setCurrentPrice] = useState(auction?.current_price || listing.starting_price);
   const [bidCount, setBidCount] = useState(auction?.bid_count || 0);
+  const [highBidder, setHighBidder] = useState("Heritage Patron");
+  const [auctionEndTime, setAuctionEndTime] = useState<string>(
+    auction?.end_time || new Date(Date.now() + 86400000).toISOString()
+  );
   const [bidInput, setBidInput] = useState<string>("");
   const [biddingError, setBiddingError] = useState<string | null>(null);
   const [biddingSuccess, setBiddingSuccess] = useState<string | null>(null);
+  const [antiSnipingAlert, setAntiSnipingAlert] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [checkoutOrderType, setCheckoutOrderType] = useState<"buy_now" | "auction_win">("buy_now");
   const [timeLeft, setTimeLeft] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"provenance" | "condition" | "shipping">("provenance");
+  const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
 
   const minNextBidPaisa = currentPrice + (auction?.min_increment || 50000);
 
-  // Countdown timer
+  // Sync Watchlist from localStorage
   useEffect(() => {
-    if (!auction?.end_time) return;
+    try {
+      const saved = localStorage.getItem("auctionly_watchlist");
+      if (saved) {
+        const list = JSON.parse(saved);
+        if (Array.isArray(list) && list.includes(listing.id)) {
+          setIsBookmarked(true);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [listing.id]);
+
+  const toggleWatchlist = () => {
+    try {
+      const saved = localStorage.getItem("auctionly_watchlist");
+      let list: string[] = saved ? JSON.parse(saved) : [];
+      if (!Array.isArray(list)) list = [];
+
+      let nextState = false;
+      if (list.includes(listing.id)) {
+        list = list.filter((id) => id !== listing.id);
+        nextState = false;
+      } else {
+        list.push(listing.id);
+        nextState = true;
+      }
+      localStorage.setItem("auctionly_watchlist", JSON.stringify(list));
+      setIsBookmarked(nextState);
+      window.dispatchEvent(new Event("storage"));
+    } catch {
+      setIsBookmarked(!isBookmarked);
+    }
+  };
+
+  // Countdown timer based on authoritative server auctionEndTime
+  useEffect(() => {
+    if (!auctionEndTime) return;
 
     const timer = setInterval(() => {
-      const diff = new Date(auction.end_time).getTime() - Date.now();
+      const diff = new Date(auctionEndTime).getTime() - Date.now();
       if (diff <= 0) {
         setTimeLeft("Auction Closed");
         return;
@@ -61,13 +108,14 @@ export default function LotDetailPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [auction?.end_time]);
+  }, [auctionEndTime]);
 
-  // Handle Bidding Submission
-  const handlePlaceBid = (e: React.FormEvent) => {
+  // Handle Authoritative Server Bidding Submission
+  const handlePlaceBid = async (e: React.FormEvent) => {
     e.preventDefault();
     setBiddingError(null);
     setBiddingSuccess(null);
+    setAntiSnipingAlert(false);
 
     const enteredPaisa = Math.round(parseFloat(bidInput.replace(/,/g, "")) * 100);
 
@@ -78,14 +126,53 @@ export default function LotDetailPage() {
 
     setIsSubmitting(true);
 
-    // Simulate authoritative server bid validation
-    setTimeout(() => {
-      setCurrentPrice(enteredPaisa);
-      setBidCount((prev) => prev + 1);
-      setBiddingSuccess(`Authoritative proxy bid of ${formatINR(enteredPaisa)} accepted. You are the high bidder.`);
+    try {
+      // Fetch current logged in user name if available
+      let bidderName = "Verified Collector";
+      try {
+        const u = localStorage.getItem("auctionly_user");
+        if (u) {
+          const parsed = JSON.parse(u);
+          if (parsed?.name) bidderName = parsed.name;
+        }
+      } catch {
+        // ignore
+      }
+
+      const res = await fetch("/api/auctions/bid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId: listing.id,
+          slug: listing.slug,
+          bidAmountPaisa: enteredPaisa,
+          bidderName,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to place bid on server.");
+      }
+
+      setCurrentPrice(data.currentPricePaisa);
+      setBidCount(data.bidCount);
+      setHighBidder(data.highBidder);
+      if (data.endTime) {
+        setAuctionEndTime(data.endTime);
+      }
+      if (data.antiSnipingExtended) {
+        setAntiSnipingAlert(true);
+      }
+
+      setBiddingSuccess(data.message);
       setBidInput("");
+    } catch (err: any) {
+      setBiddingError(err.message || "Bidding submission error.");
+    } finally {
       setIsSubmitting(false);
-    }, 600);
+    }
   };
 
   const breakdown = calculateAuctionBreakdown({
@@ -214,19 +301,44 @@ export default function LotDetailPage() {
           <div className="card-luxury p-8 flex flex-col gap-6 sticky top-28">
             {/* Header: Title & Maker */}
             <div className="flex flex-col gap-2 border-b border-luxury-champagne/15 pb-6">
-              <span className="text-[11px] uppercase tracking-luxury text-luxury-gold font-medium">
-                {listing.artist_or_maker || "Rare Consignment"}
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] uppercase tracking-luxury text-luxury-gold font-medium">
+                  {listing.artist_or_maker || "Rare Consignment"}
+                </span>
+                <button
+                  onClick={toggleWatchlist}
+                  aria-label="Save lot to watchlist"
+                  className="p-1.5 border border-luxury-champagne/30 hover:border-luxury-gold rounded-sm transition-colors flex items-center gap-1.5 text-xs text-luxury-champagne"
+                >
+                  <Bookmark
+                    size={14}
+                    className={isBookmarked ? "fill-luxury-gold text-luxury-gold" : "text-luxury-champagne"}
+                  />
+                  <span className="text-[10px] uppercase tracking-wider">
+                    {isBookmarked ? "Saved" : "Save Lot"}
+                  </span>
+                </button>
+              </div>
               <h1 className="font-serif text-2xl sm:text-3xl text-luxury-ivory font-medium leading-snug">
                 {listing.title}
               </h1>
 
               <div className="flex items-center justify-between text-xs text-luxury-champagne/70 pt-2">
-                <span>Lot #104</span>
+                <span>Lot #{listing.id.replace("list-", "10")}</span>
                 <span className="text-luxury-muted">•</span>
                 <span>Estimate: {formatINR(listing.estimate_low || listing.starting_price)} – {formatINR(listing.estimate_high || listing.starting_price * 1.5)}</span>
               </div>
             </div>
+
+            {/* Anti-Sniping Dynamic Extension Notice */}
+            {antiSnipingAlert && (
+              <div className="p-3 bg-amber-950/70 border border-amber-600 text-amber-200 text-xs flex items-center gap-2 rounded-sm animate-pulse">
+                <Clock size={15} className="text-amber-400 shrink-0" />
+                <span>
+                  <strong>Soft-Close Extension Activated:</strong> Dynamic anti-sniping extended this auction by 3 minutes due to competitive bidding.
+                </span>
+              </div>
+            )}
 
             {/* Auction Status & Current Bid */}
             <div className="bg-luxury-black/70 p-5 rounded-sm border border-luxury-subtle/50 flex flex-col gap-4">

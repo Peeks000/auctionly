@@ -35,3 +35,7 @@ next-env.d.ts
 .idea
 .vscode
 *.swp
+
+# Nested Previous Project
+auctionly/
+

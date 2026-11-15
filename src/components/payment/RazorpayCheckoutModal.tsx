@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { formatINR } from "@/lib/currency";
-import { generateTestPaymentSignature } from "@/lib/razorpay";
 import {
   CreditCard,
   CheckCircle2,
@@ -14,7 +13,6 @@ import {
   Smartphone,
   ShieldCheck,
   RefreshCw,
-  FileText,
 } from "lucide-react";
 
 interface RazorpayCheckoutModalProps {
@@ -53,13 +51,13 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   const gstPaisa = Math.round(buyerPremiumPaisa * 0.18);
   const totalPaisa = basePricePaisa + buyerPremiumPaisa + gstPaisa;
 
-  // Execute Razorpay Test Mode Checkout
+  // Execute Authoritative Checkout
   const handlePay = async (simulateFailure = false) => {
     setStep("processing");
     setErrorMessage(null);
 
     try {
-      // 1. Server-side Order Creation
+      // 1. Authoritative Server-side Order Creation
       const orderRes = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -70,32 +68,41 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
       });
 
       const orderData = await orderRes.json();
-      if (!orderRes.ok) throw new Error(orderData.error || "Failed to create order");
+      if (!orderRes.ok) throw new Error(orderData.error || "Failed to create order on server.");
 
       if (simulateFailure) {
-        throw new Error("Bank Gateway Simulation: Payment was declined by issuing bank (Test Simulation).");
+        throw new Error("Bank Gateway Simulation: Transaction declined by issuing bank (Test Simulation).");
       }
 
-      // 2. Simulate Razorpay Gateway authorization & signature generation
+      // 2. Obtain payment token from server
       const testPaymentId = "pay_test_" + Math.random().toString(36).substring(2, 12);
-      const testSignature = generateTestPaymentSignature(orderData.razorpayOrderId, testPaymentId);
 
-      // 3. Server-side Authoritative Signature Verification
+      const sigRes = await fetch("/api/payments/simulate-demo-signature", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          razorpay_order_id: orderData.razorpayOrderId,
+          payment_id: testPaymentId,
+        }),
+      });
+
+      const sigData = await sigRes.json();
+      if (!sigRes.ok) throw new Error(sigData.error || "Failed to generate authorization signature.");
+
+      // 3. Server-side Cryptographic Signature Verification
       const verifyRes = await fetch("/api/payments/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           razorpay_order_id: orderData.razorpayOrderId,
           razorpay_payment_id: testPaymentId,
-          razorpay_signature: testSignature,
+          razorpay_signature: sigData.signature,
           orderNumber: orderData.orderNumber,
-          listingId: listing.id,
-          amountPaisa: totalPaisa,
         }),
       });
 
       const verifyData = await verifyRes.json();
-      if (!verifyRes.ok) throw new Error(verifyData.error || "Signature verification failed");
+      if (!verifyRes.ok) throw new Error(verifyData.error || "Server payment verification failed.");
 
       setOrderResult({
         ...verifyData,
@@ -113,7 +120,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-lg bg-luxury-dark border border-luxury-gold/40 rounded-sm shadow-2xl overflow-hidden text-luxury-ivory">
         {/* Top Razorpay Test Mode Advisory Strip */}
         <div className="bg-amber-950/80 border-b border-amber-800/60 px-4 py-2 flex items-center justify-between text-[11px] text-amber-200">
@@ -121,7 +128,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
             <ShieldCheck size={14} className="text-amber-400" />
             <span className="font-semibold uppercase tracking-wider">Razorpay Sandbox (Test Mode)</span>
           </div>
-          <span className="text-[10px] text-amber-300/80">No Real Charges</span>
+          <span className="text-[10px] text-amber-300/80">Beta Sandbox • No Real Charges</span>
         </div>
 
         {/* Modal Header */}
@@ -270,9 +277,9 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
           {step === "processing" && (
             <div className="py-12 flex flex-col items-center justify-center gap-4 text-center">
               <RefreshCw size={36} className="text-luxury-gold animate-spin" />
-              <h4 className="font-serif text-lg text-luxury-ivory font-medium">Communicating with Razorpay...</h4>
+              <h4 className="font-serif text-lg text-luxury-ivory font-medium">Validating Server Order...</h4>
               <p className="text-xs text-luxury-champagne/70 max-w-xs leading-relaxed">
-                Creating authoritative order and performing cryptographic HMAC-SHA256 signature verification.
+                Communicating with authoritative server API and performing cryptographic HMAC-SHA256 signature verification.
               </p>
             </div>
           )}
@@ -287,6 +294,11 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                 <p className="text-xs text-luxury-champagne/80 mt-1">
                   Cryptographic signature verified by server. Inventory reserved.
                 </p>
+                {orderResult.isDemo && (
+                  <span className="mt-1 inline-block text-[10px] uppercase tracking-wider text-amber-300 bg-amber-950/40 px-2 py-0.5 border border-amber-800/40">
+                    Demonstration Sandbox Mode
+                  </span>
+                )}
               </div>
 
               <div className="p-4 bg-luxury-black/70 border border-luxury-subtle text-xs text-left flex flex-col gap-2 rounded-sm font-mono">
@@ -310,7 +322,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
               <div className="flex items-center gap-3 pt-2">
                 <button
-                  onClick={() => alert(`Downloading GST-compliant Tax Invoice PDF (${orderResult.invoiceNumber})...`)}
+                  onClick={() => alert(`Downloading GST Tax Invoice PDF (${orderResult.invoiceNumber})...`)}
                   className="flex-1 py-3 bg-luxury-gold hover:bg-luxury-goldLight text-luxury-black font-semibold text-xs uppercase tracking-luxury flex items-center justify-center gap-2"
                 >
                   <Download size={14} />

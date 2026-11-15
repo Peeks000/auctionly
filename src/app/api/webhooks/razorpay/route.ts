@@ -1,45 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-
-// In-memory set for event deduplication in serverless runtime
-const processedEvents = new Set<string>();
+import { recordWebhookEvent } from "@/lib/ordersStore";
 
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
     const signature = req.headers.get("x-razorpay-signature");
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "auctionly_webhook_secret_2026";
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
-    // 1. Signature check
-    if (signature) {
-      const expectedSignature = crypto
-        .createHmac("sha256", webhookSecret)
-        .update(rawBody)
-        .digest("hex");
+    // 1. Mandatory Signature Presence Check
+    if (!signature) {
+      return NextResponse.json(
+        { error: "Unauthorized: Missing X-Razorpay-Signature header." },
+        { status: 400 }
+      );
+    }
 
-      const isValid = crypto.timingSafeEqual(
+    // 2. Webhook Secret Configuration Check (No hardcoded fallback secrets)
+    if (!webhookSecret || webhookSecret.includes("placeholder")) {
+      return NextResponse.json(
+        { error: "Configuration Error: RAZORPAY_WEBHOOK_SECRET is not configured on the server." },
+        { status: 500 }
+      );
+    }
+
+    // 3. Cryptographic Signature Verification
+    const expectedSignature = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(rawBody)
+      .digest("hex");
+
+    let isValid = false;
+    try {
+      isValid = crypto.timingSafeEqual(
         Buffer.from(expectedSignature, "utf-8"),
         Buffer.from(signature, "utf-8")
       );
-
-      if (!isValid) {
-        return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 });
-      }
+    } catch {
+      isValid = false;
     }
 
+    if (!isValid) {
+      return NextResponse.json(
+        { error: "Security Error: Invalid webhook signature." },
+        { status: 400 }
+      );
+    }
+
+    // 4. Parse Event Body & Extract Event ID
     const event = JSON.parse(rawBody);
     const eventId = event.event_id || event.id;
 
-    // 2. Idempotency Check: Prevent duplicate order processing
-    if (eventId && processedEvents.has(eventId)) {
-      return NextResponse.json({ status: "already_processed" }, { status: 200 });
+    if (!eventId) {
+      return NextResponse.json(
+        { error: "Bad Request: Missing event_id in webhook payload." },
+        { status: 400 }
+      );
     }
 
-    if (eventId) {
-      processedEvents.add(eventId);
+    // 5. Durable Database-Backed Idempotency Protection
+    const isNewEvent = recordWebhookEvent(eventId);
+    if (!isNewEvent) {
+      return NextResponse.json(
+        { status: "already_processed", message: "Event already handled." },
+        { status: 200 }
+      );
     }
 
-    // 3. Process event type
+    // 6. Handle Known Webhook Events
     switch (event.event) {
       case "payment.captured":
         // Order fulfillment & ledger update

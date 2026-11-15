@@ -19,7 +19,7 @@ export interface RazorpayOrderResponse {
   attempts: number;
   notes: Record<string, string>;
   created_at: number;
-  is_simulated?: boolean;
+  is_simulated: boolean;
 }
 
 /**
@@ -37,7 +37,6 @@ export async function createRazorpayOrder(params: CreateOrderParams): Promise<Ra
     keyId.startsWith("rzp_test_");
 
   if (isRealRazorpayConfigured) {
-    // Invoke official Razorpay Orders API
     const authHeader = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
     const response = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
@@ -58,11 +57,14 @@ export async function createRazorpayOrder(params: CreateOrderParams): Promise<Ra
       throw new Error(`Razorpay API Error: ${errorData.error?.description || response.statusText}`);
     }
 
-    return await response.json();
+    const orderData = await response.json();
+    return {
+      ...orderData,
+      is_simulated: false,
+    };
   }
 
-  // Authoritative Test Mode Sandbox Simulation
-  // Generates unique order matching Razorpay's exact schema
+  // Authoritative Test Mode Sandbox Simulation (No credentials configured)
   const simulatedOrderId = "order_test_" + crypto.randomBytes(8).toString("hex");
   return {
     id: simulatedOrderId,
@@ -88,43 +90,75 @@ export function verifyRazorpayPaymentSignature({
   orderId,
   paymentId,
   signature,
+  isDemo = false,
 }: {
   orderId: string;
   paymentId: string;
   signature: string;
+  isDemo?: boolean;
 }): boolean {
-  const secret = process.env.RAZORPAY_KEY_SECRET || "auctionly_test_secret_key_2026";
-  const body = `${orderId}|${paymentId}`;
+  const secret = process.env.RAZORPAY_KEY_SECRET;
 
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(body)
-    .digest("hex");
-
-  // In simulated test mode with order_test_
-  if (orderId.startsWith("order_test_")) {
-    const simulatedSignature = crypto
-      .createHmac("sha256", "auctionly_test_secret_key_2026")
-      .update(body)
-      .digest("hex");
-    return signature === simulatedSignature || signature === expectedSignature;
-  }
-
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(expectedSignature, "utf-8"),
-      Buffer.from(signature, "utf-8")
-    );
-  } catch {
+  if (!signature || typeof signature !== "string") {
     return false;
   }
+
+  const body = `${orderId}|${paymentId}`;
+
+  // If real Razorpay key is configured, verify against actual secret
+  if (secret && !secret.includes("placeholder")) {
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(body)
+      .digest("hex");
+
+    try {
+      return crypto.timingSafeEqual(
+        Buffer.from(expectedSignature, "utf-8"),
+        Buffer.from(signature, "utf-8")
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // If order was created in Demo Sandbox mode, verify against server-derived session token
+  if (isDemo || orderId.startsWith("order_test_")) {
+    // Generate derived server signature using internal session key
+    const serverDerivedKey = crypto
+      .createHash("sha256")
+      .update((process.env.SUPER_ADMIN_BOOTSTRAP_KEY || "auctionly_demo_sandbox_salt") + "_payment")
+      .digest("hex");
+
+    const expectedDemoSignature = crypto
+      .createHmac("sha256", serverDerivedKey)
+      .update(body)
+      .digest("hex");
+
+    try {
+      return crypto.timingSafeEqual(
+        Buffer.from(expectedDemoSignature, "utf-8"),
+        Buffer.from(signature, "utf-8")
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
 }
 
 /**
- * Generate test-mode signature for the client-side sandbox
+ * Server-only helper to generate demo signature for test checkout execution
  */
-export function generateTestPaymentSignature(orderId: string, paymentId: string): string {
-  const secret = process.env.RAZORPAY_KEY_SECRET || "auctionly_test_secret_key_2026";
+export function generateServerDemoSignature(orderId: string, paymentId: string): string {
   const body = `${orderId}|${paymentId}`;
-  return crypto.createHmac("sha256", secret).update(body).digest("hex");
+  const serverDerivedKey = crypto
+    .createHash("sha256")
+    .update((process.env.SUPER_ADMIN_BOOTSTRAP_KEY || "auctionly_demo_sandbox_salt") + "_payment")
+    .digest("hex");
+
+  return crypto.createHmac("sha256", serverDerivedKey).update(body).digest("hex");
 }
+
+export const generateTestPaymentSignature = generateServerDemoSignature;

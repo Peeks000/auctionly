@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createRazorpayOrder } from "@/lib/razorpay";
 import { calculateAuctionBreakdown } from "@/lib/currency";
 import { mockListings } from "@/lib/data/mockCatalogue";
+import { saveOrder } from "@/lib/ordersStore";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Locate listing
+    // Locate listing in catalogue
     const listing = mockListings.find((l) => l.id === listingId || l.slug === listingId);
 
     if (!listing) {
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Determine purchase base amount in Paisa
+    // Determine purchase base amount authoritatively on server
     const basePricePaisa =
       orderType === "buy_now"
         ? listing.buy_now_price || listing.starting_price
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     const receipt = `RCP-${Date.now().toString().slice(-6)}`;
 
-    // Create authoritative order on Razorpay
+    // Create authoritative order on Razorpay or test sandbox
     const razorpayOrder = await createRazorpayOrder({
       amountPaisa: breakdown.grandTotalPaisa,
       currency: "INR",
@@ -60,6 +61,21 @@ export async function POST(req: NextRequest) {
     });
 
     const orderNumber = `AUC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // Persist authoritative order record on server
+    saveOrder({
+      orderNumber,
+      razorpayOrderId: razorpayOrder.id,
+      listingId: listing.id,
+      buyerId,
+      amountPaisa: breakdown.grandTotalPaisa,
+      hammerPricePaisa: breakdown.hammerPricePaisa,
+      buyerPremiumPaisa: breakdown.buyerPremiumPaisa,
+      taxPaisa: breakdown.totalTaxPaisa,
+      status: "pending",
+      isDemo: razorpayOrder.is_simulated,
+      createdAt: new Date().toISOString(),
+    });
 
     return NextResponse.json({
       success: true,

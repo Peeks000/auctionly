@@ -74,21 +74,24 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Quick Metrics */}
+            {/* Platform Architecture & Curatorial Scope Indicators */}
             <div className="grid grid-cols-3 gap-6 pt-6 border-t border-luxury-subtle/40 mt-4 text-luxury-champagne/90">
-              <div>
-                <span className="block font-serif text-2xl font-semibold text-luxury-ivory">₹100 Cr+</span>
-                <span className="text-[10px] uppercase tracking-luxury text-luxury-muted">Verified Provenance</span>
-              </div>
-              <div>
-                <span className="block font-serif text-2xl font-semibold text-luxury-ivory">100%</span>
-                <span className="text-[10px] uppercase tracking-luxury text-luxury-muted">Authoritative Bids</span>
-              </div>
               <div>
                 <span className="block font-serif text-2xl font-semibold text-luxury-ivory">7</span>
                 <span className="text-[10px] uppercase tracking-luxury text-luxury-muted">Specialist Departments</span>
               </div>
+              <div>
+                <span className="block font-serif text-2xl font-semibold text-luxury-ivory">INR (₹)</span>
+                <span className="text-[10px] uppercase tracking-luxury text-luxury-muted">Authoritative Settlement</span>
+              </div>
+              <div>
+                <span className="block font-serif text-2xl font-semibold text-luxury-gold">Anti-Snip</span>
+                <span className="text-[10px] uppercase tracking-luxury text-luxury-muted">Dynamic Soft Close</span>
+              </div>
             </div>
+            <p className="text-[10px] text-luxury-muted/70 italic">
+              * Private Beta Demonstration: All catalogued lots and currency valuations shown for illustrative purposes.
+            </p>
           </div>
 
           {/* Right Column: 3D Interactive Stage */}
