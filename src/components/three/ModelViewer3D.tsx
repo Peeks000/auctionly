@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import dynamic from "next/dynamic";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import {
   Box,
   Image as ImageIcon,
@@ -13,19 +14,6 @@ import {
   Maximize2,
   Compass,
 } from "lucide-react";
-
-// Dynamically import the WebGL Canvas without SSR to avoid prerendering reconciler crashes
-const ModelViewerCanvas = dynamic(() => import("./ModelViewerCanvas"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center">
-      <div className="text-luxury-gold text-xs uppercase tracking-luxury flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-luxury-gold animate-ping" />
-        <span>Initializing 3D Inspection Stage...</span>
-      </div>
-    </div>
-  ),
-});
 
 interface ModelViewer3DProps {
   modelUrl?: string | null;
@@ -44,29 +32,133 @@ export const ModelViewer3D: React.FC<ModelViewer3DProps> = ({
   const [selectedImage, setSelectedImage] = useState<string>(primaryImageUrl);
   const [photoZoom, setPhotoZoom] = useState<number>(1);
   const [hasWebGL, setHasWebGL] = useState<boolean | null>(null);
-  const controlsRef = useRef<any>(null);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
   const allImages = [primaryImageUrl, ...galleryUrls];
 
   useEffect(() => {
+    if (activeTab !== "3d") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    let renderer: THREE.WebGLRenderer | null = null;
+    let animationFrameId: number;
+
     try {
-      const canvas = document.createElement("canvas");
-      const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-      setHasWebGL(!!gl);
-    } catch {
+      const width = canvas.clientWidth || 600;
+      const height = canvas.clientHeight || 480;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+      camera.position.set(0, 0, 4.5);
+      cameraRef.current = camera;
+
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true,
+      });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.enablePan = false;
+      controls.minDistance = 2.5;
+      controls.maxDistance = 7.5;
+      controls.rotateSpeed = 0.8;
+      controlsRef.current = controls;
+
+      // Studio Lighting
+      const ambientLight = new THREE.AmbientLight(0xf5f0e7, 0.7);
+      scene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight(0xe8dcc4, 2.0);
+      dirLight1.position.set(5, 8, 5);
+      scene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0xc6a66a, 0.8);
+      dirLight2.position.set(-5, -4, -4);
+      scene.add(dirLight2);
+
+      const pointLight = new THREE.PointLight(0xc6a66a, 2.0, 6);
+      pointLight.position.set(0, 0, -2);
+      scene.add(pointLight);
+
+      // Procedural Jewel Model
+      const group = new THREE.Group();
+
+      const gemGeo = new THREE.OctahedronGeometry(1.3, 2);
+      const gemMat = new THREE.MeshStandardMaterial({
+        color: 0xc6a66a,
+        metalness: 0.9,
+        roughness: 0.15,
+      });
+      const gem = new THREE.Mesh(gemGeo, gemMat);
+      group.add(gem);
+
+      const ringGeo = new THREE.TorusGeometry(1.9, 0.05, 16, 48);
+      const ringMat = new THREE.MeshStandardMaterial({
+        color: 0xe8dcc4,
+        metalness: 0.95,
+        roughness: 0.1,
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.PI / 3;
+      group.add(ring);
+
+      scene.add(group);
+      setHasWebGL(true);
+
+      let floatTick = 0;
+      const animate = () => {
+        animationFrameId = requestAnimationFrame(animate);
+        floatTick += 0.02;
+        group.position.y = Math.sin(floatTick) * 0.06;
+        group.rotation.y += 0.003;
+        ring.rotation.z += 0.002;
+        controls.update();
+        renderer?.render(scene, camera);
+      };
+      animate();
+
+      const handleResize = () => {
+        if (!canvasRef.current || !renderer) return;
+        const w = canvasRef.current.clientWidth;
+        const h = canvasRef.current.clientHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      };
+      window.addEventListener("resize", handleResize);
+
+      return () => {
+        cancelAnimationFrame(animationFrameId);
+        window.removeEventListener("resize", handleResize);
+        controls.dispose();
+        renderer?.dispose();
+      };
+    } catch (err) {
+      console.warn("WebGL blocked or unsupported by browser:", err);
       setHasWebGL(false);
     }
-  }, []);
+  }, [activeTab]);
 
   const handleResetCamera = () => {
-    if (controlsRef.current) {
+    if (controlsRef.current && cameraRef.current) {
       controlsRef.current.reset();
+      cameraRef.current.position.set(0, 0, 4.5);
+      controlsRef.current.update();
     }
   };
 
   const handleZoom = (delta: number) => {
-    if (controlsRef.current) {
-      const camera = controlsRef.current.object;
+    if (controlsRef.current && cameraRef.current) {
+      const camera = cameraRef.current;
       const target = controlsRef.current.target;
       const dir = camera.position.clone().sub(target).normalize();
       camera.position.addScaledVector(dir, delta);
@@ -115,9 +207,7 @@ export const ModelViewer3D: React.FC<ModelViewer3DProps> = ({
           {/* Subtle radial atmosphere */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(198,166,106,0.12)_0%,rgba(24,24,24,0.6)_50%,rgba(17,17,17,0.98)_90%)] pointer-events-none" />
 
-          {hasWebGL !== false ? (
-            <ModelViewerCanvas title={title} controlsRef={controlsRef} />
-          ) : (
+          {hasWebGL === false ? (
             <div className="relative w-full h-full flex items-center justify-center p-6">
               <Image
                 src={primaryImageUrl}
@@ -127,6 +217,11 @@ export const ModelViewer3D: React.FC<ModelViewer3DProps> = ({
                 className="object-contain"
               />
             </div>
+          ) : (
+            <canvas
+              ref={canvasRef}
+              className="w-full h-full cursor-grab active:cursor-grabbing relative z-10"
+            />
           )}
 
           {/* Top Left Badge */}
@@ -205,7 +300,7 @@ export const ModelViewer3D: React.FC<ModelViewer3DProps> = ({
               </button>
             </div>
 
-            {/* Curatorial 2D Label (Accurate labeling) */}
+            {/* Curatorial 2D Label */}
             <div className="absolute bottom-4 left-4 z-20 bg-luxury-black/85 backdrop-blur-md px-3 py-1.5 border border-luxury-champagne/25 text-[10px] uppercase tracking-luxury text-luxury-champagne">
               Curatorial Photographic Specimen
             </div>

@@ -3,6 +3,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AiConcierge from "@/components/ai/AiConcierge";
+import GlobalErrorBoundary from "@/components/layout/GlobalErrorBoundary";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -38,10 +39,12 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className="min-h-screen bg-luxury-black text-luxury-ivory flex flex-col selection:bg-luxury-gold selection:text-luxury-black">
-        <Header />
-        <main className="flex-1 w-full">{children}</main>
-        <AiConcierge />
-        <Footer />
+        <GlobalErrorBoundary>
+          <Header />
+          <main className="flex-1 w-full">{children}</main>
+          <AiConcierge />
+          <Footer />
+        </GlobalErrorBoundary>
       </body>
     </html>
   );
