@@ -1,33 +1,51 @@
 # AUCTIONLY — Project Memory & Execution State
 
 ## Active Phase
-- **Current Phase:** Phase 0 — Workspace & Planning
-- **Status:** In Progress / Nearing Completion
+- **Current Phase:** Phase 0 & Phase 1 Complete; Foundations of Phases 2–10 Implemented
+- **Status:** Execution Underway
 - **Active Workspace:** `C:\Users\Yash\Desktop\repo 1`
-- **Target Git Repository:** `auctionly` (new public repo)
+- **Target Git Repository:** `auctionly` (new public repository)
 
 ## Completed Milestones
-- [x] Workspace verification: `repo 1` verified as active and clean.
-- [x] Tooling inspection: Node.js `v26.13.1`, npm `11.20.0` (using `.cmd` to bypass PowerShell script execution policy), Git `2.55.0.windows.5`.
-- [x] Git credentials verified (`Peeks000`, `yashofficial124@gmail.com`).
-- [x] GSD Core workflow alignment: `.planning/` charter, requirements, roadmap, and state memory initialized.
-
-## In Progress
-- [ ] Comprehensive documentation suite in `docs/`:
-  - `docs/PRD.md`
-  - `docs/ARCHITECTURE.md`
-  - `docs/DATABASE.md`
-  - `docs/SECURITY.md`
-  - `docs/DESIGN_SYSTEM.md`
-  - `docs/ROADMAP.md`
-  - `docs/TESTING.md`
-  - `docs/DEPLOYMENT.md`
-  - `docs/INTEGRATIONS.md`
-  - `docs/FEATURE_STATUS.md`
-  - `docs/RISKS.md`
-  - `docs/COSTS.md`
-  - `.env.example`
-  - `README.md`
-
-## Next Up
-- Phase 1: Brand & Design Foundation (Wordmark, luxury symbols, theme tokens, typography, luxury layout shells).
+- [x] **Workspace & Tooling Verified:** Confirmed `C:\Users\Yash\Desktop\repo 1`. Inspected Node.js `v26.13.1`, npm `11.20.0` (invoked via `.cmd`), Git `2.55.0.windows.5`. Verified Git author config `Peeks000` (`yashofficial124@gmail.com`).
+- [x] **Master Planning Documentation Suite (docs/):**
+  - [PRD.md](file:///C:/Users/Yash/Desktop/repo%201/docs/PRD.md)
+  - [ARCHITECTURE.md](file:///C:/Users/Yash/Desktop/repo%201/docs/ARCHITECTURE.md)
+  - [DATABASE.md](file:///C:/Users/Yash/Desktop/repo%201/docs/DATABASE.md)
+  - [SECURITY.md](file:///C:/Users/Yash/Desktop/repo%201/docs/SECURITY.md)
+  - [DESIGN_SYSTEM.md](file:///C:/Users/Yash/Desktop/repo%201/docs/DESIGN_SYSTEM.md)
+  - [ROADMAP.md](file:///C:/Users/Yash/Desktop/repo%201/docs/ROADMAP.md)
+  - [TESTING.md](file:///C:/Users/Yash/Desktop/repo%201/docs/TESTING.md)
+  - [DEPLOYMENT.md](file:///C:/Users/Yash/Desktop/repo%201/docs/DEPLOYMENT.md)
+  - [INTEGRATIONS.md](file:///C:/Users/Yash/Desktop/repo%201/docs/INTEGRATIONS.md)
+  - [FEATURE_STATUS.md](file:///C:/Users/Yash/Desktop/repo%201/docs/FEATURE_STATUS.md)
+  - [RISKS.md](file:///C:/Users/Yash/Desktop/repo%201/docs/RISKS.md)
+  - [COSTS.md](file:///C:/Users/Yash/Desktop/repo%201/docs/COSTS.md)
+  - [.env.example](file:///C:/Users/Yash/Desktop/repo%201/.env.example)
+  - [README.md](file:///C:/Users/Yash/Desktop/repo%201/README.md)
+- [x] **Brand & Luxury Design System:**
+  - SVG Wordmark, Monogram 'A', Brand Emblem, Animated Brand Mark.
+  - Tailored color tokens (`#111111`, `#242424`, `#E8DCC4`, `#C6A66A`, `#F5F0E7`).
+  - Luxury layout Header and Footer with 7 departments.
+- [x] **Database & Security Core:**
+  - Complete PostgreSQL migration `20261115000000_initial_schema.sql` covering 14 tables, custom ENUMs, and Row Level Security (RLS).
+  - Concurrency-safe atomic bidding stored procedure (`place_bid`) with row locks, private proxy bidding, and anti-sniping extension.
+  - Atomic dual-sale prevention procedure (`execute_buy_now`).
+  - Trigger preventing unauthorized role escalation.
+  - One-time Super Admin bootstrap API route (`/api/admin/bootstrap`).
+- [x] **3D Immersion & Fallbacks:**
+  - Three.js / React Three Fiber Hero 3D Stage (`HeroScene3D`).
+  - 3D Model Viewer (`ModelViewer3D`) supporting GLB models with 360 controls and instant fallback gallery (`CanvasFallback`).
+- [x] **Catalogue & Marketplace Core:**
+  - Homepage featuring 14 distinct luxury sections.
+  - Curated catalogue with departmental filtering, search, and sorting.
+  - Comprehensive Product Detail Page (PDP) with real-time bidding validation and GST invoice breakdown.
+  - Live Gala Room with auctioneer roster stream simulation and hammer-down workflow.
+  - Consignment Studio with AI description helper and draft validation.
+  - Buyer Dashboard with active bids, won lots, and downloadable GST invoice records.
+  - Admin Control Center with moderation desk and free-tier quota tracking.
+  - Floating Grounded AI Concierge.
+- [x] **Quality & DevOps:**
+  - Concurrency test harness (`tests/concurrency.test.ts`).
+  - GitHub Actions CI workflow (`.github/workflows/ci.yml`).
+  - Netlify free-tier deployment configuration (`netlify.toml`).
