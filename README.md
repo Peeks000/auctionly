@@ -5,9 +5,18 @@
 [![Next.js](https://img.shields.io/badge/Next.js-15_App_Router-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-R3F-black?logo=three.js)](https://threejs.org/)
+[![Vercel Production](https://img.shields.io/badge/Vercel-Deployed_Production-black?logo=vercel)](https://vercel.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL_%26_Auth-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Razorpay](https://img.shields.io/badge/Razorpay-Test_Mode-0C2340?logo=razorpay)](https://razorpay.com/)
 [![License](https://img.shields.io/badge/License-Proprietary-gold)](#)
+
+---
+
+## ⚡ Production Deployment
+- **Platform:** Vercel Production
+- **Build Status:** Passing (Built in 41s, optimized Next.js 15 App Router static & dynamic routes)
+- **Repository:** [https://github.com/Peeks000/auctionly](https://github.com/Peeks000/auctionly)
+- **Deployment URL:** Accessible via Vercel Dashboard (peeks000 projects)
 
 ---
 

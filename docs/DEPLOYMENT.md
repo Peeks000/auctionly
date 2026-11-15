@@ -8,10 +8,10 @@
 
 ## 1. Hosting Provider Analysis & Selection
 
-| Provider | Next.js 15 App Router Support | Free Bandwidth | Serverless Functions | Edge Middleware | Recommendation |
-|---|:---:|:---:|:---:|:---:|:---:|
-| **Netlify Free** | Yes (`@netlify/plugin-nextjs`) | 100 GB / month | 125k requests / mo | Included | **Primary Choice** |
-| **Vercel Free** | Native (Creator of Next.js) | 100 GB / month | Fast cold starts | Included | **Alternate Choice** |
+| Provider | Next.js 15 App Router Support | Free Bandwidth | Serverless Functions | Edge Middleware | Recommendation | Status |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Vercel Free** | Native (Creator of Next.js) | 100 GB / month | Fast cold starts | Included | **Deployed in 41s** | **Active Production** |
+| **Netlify Free** | Yes (`@netlify/plugin-nextjs`) | 100 GB / month | 125k requests / mo | Included | **Supported** | Configured (`netlify.toml`) |
 
 ### Netlify Deployment Configuration (`netlify.toml`):
 ```toml
