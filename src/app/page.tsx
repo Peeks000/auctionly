@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import LotCard from "@/components/catalogue/LotCard";
 import MonogramA from "@/components/brand/MonogramA";
+import CinematicScrollExperience from "@/components/experience/CinematicScrollExperience";
 import { mockListings, mockCategories } from "@/lib/data/mockCatalogue";
 import {
   Gavel,
@@ -120,11 +121,11 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Scroll to Discover linked to #featured-auctions */}
+          {/* Scroll to Discover linked to the cinematic scroll journey */}
           <Link
-            href="#featured-auctions"
+            href="#cinematic-experience"
             className="flex flex-col items-center gap-1.5 pt-1 group cursor-pointer focus:outline-none"
-            aria-label="Scroll to Discover Featured Auctions"
+            aria-label="Scroll to Discover Cinematic Experience"
           >
             <span className="text-[9px] sm:text-[10px] tracking-[0.3em] uppercase text-luxury-champagne/75 group-hover:text-luxury-gold transition-colors font-light">
               Scroll to Discover
@@ -133,6 +134,11 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      {/* ====================================================================
+          NEW SECTION: CINEMATIC SCROLL EXPERIENCE (SCROLL-DRIVEN MP4)
+         ==================================================================== */}
+      <CinematicScrollExperience />
 
       {/* ====================================================================
           SECTION 2: FEATURED TIMED AUCTIONS (AUTHORITATIVE ENGINE)
