@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/TestSprite/testsprite-cli/v0.16.0/schemas/plan.schema.json",
+  "projectId": "4e8d0122-f7df-45da-9807-0de6b738b4e0",
+  "type": "frontend",
+  "name": "Redesigned Footer Curatorial Pillars and 3D Mascot Showcase",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Navigate to /#footer and wait for the footer to be visible"
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the 4 Curatorial Standard pillar cards are visible: Curatorial Authenticity, Authoritative Escrow, White-Glove Shipping, and GST Invoicing & Audit"
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the Official 3D Mascot Showcase section is visible"
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the Private Curatorial Circle email signup form and Back to Summit button are visible"
+    }
+  ]
+}

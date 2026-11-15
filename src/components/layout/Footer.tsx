@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import LogoWordmark from "../brand/LogoWordmark";
@@ -63,15 +63,42 @@ export const Footer: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const scrollToFooter = () => {
+        if (window.location.hash === "#footer") {
+          const el = document.getElementById("footer");
+          if (el) {
+            el.scrollIntoView({ behavior: "auto" });
+          }
+        }
+      };
+      scrollToFooter();
+      const timer = setTimeout(scrollToFooter, 350);
+      window.addEventListener("hashchange", scrollToFooter);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener("hashchange", scrollToFooter);
+      };
+    }
+  }, []);
+
   return (
-    <footer className="relative bg-[#070605] border-t border-luxury-gold/30 text-luxury-muted mt-24 overflow-hidden">
+    <footer
+      id="footer"
+      data-testid="auctionly-footer"
+      className="relative bg-[#070605] border-t border-luxury-gold/30 text-luxury-muted mt-24 overflow-hidden"
+    >
       {/* Subtle Background Radial Ambient Glow */}
       <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[radial-gradient(ellipse_at_top,rgba(198,166,106,0.12)_0%,transparent_75%)] pointer-events-none" />
 
       {/* =====================================================================
           SECTION 1: THE 4 PILLARS OF CURATORIAL INTEGRITY (REIMAGINED)
          ===================================================================== */}
-      <div className="relative border-b border-luxury-gold/20 bg-gradient-to-b from-[#0D0B08]/90 via-[#0A0907]/95 to-[#070605] py-12 px-4 sm:px-6 lg:px-8">
+      <div
+        data-testid="curatorial-pillars"
+        className="relative border-b border-luxury-gold/20 bg-gradient-to-b from-[#0D0B08]/90 via-[#0A0907]/95 to-[#070605] py-12 px-4 sm:px-6 lg:px-8"
+      >
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
           <div className="flex flex-col items-center text-center mb-8">
@@ -87,7 +114,10 @@ export const Footer: React.FC = () => {
           {/* 4 Elevated Luxury Pillar Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Pillar 1: Curatorial Authenticity */}
-            <div className="group relative bg-[#0D0B08]/80 hover:bg-[#120F0B] border border-luxury-gold/20 hover:border-luxury-gold/60 p-5 rounded-md transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_35px_rgba(198,166,106,0.15)] flex flex-col justify-between">
+            <div
+              data-testid="pillar-authenticity"
+              className="group relative bg-[#0D0B08]/80 hover:bg-[#120F0B] border border-luxury-gold/20 hover:border-luxury-gold/60 p-5 rounded-md transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_35px_rgba(198,166,106,0.15)] flex flex-col justify-between"
+            >
               <div>
                 <div className="flex items-center justify-between mb-3.5">
                   <span className="text-[10px] font-serif tracking-[0.25em] text-luxury-gold/70 font-semibold">
@@ -111,7 +141,10 @@ export const Footer: React.FC = () => {
             </div>
 
             {/* Pillar 2: Authoritative Escrow */}
-            <div className="group relative bg-[#0D0B08]/80 hover:bg-[#120F0B] border border-luxury-gold/20 hover:border-luxury-gold/60 p-5 rounded-md transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_35px_rgba(198,166,106,0.15)] flex flex-col justify-between">
+            <div
+              data-testid="pillar-escrow"
+              className="group relative bg-[#0D0B08]/80 hover:bg-[#120F0B] border border-luxury-gold/20 hover:border-luxury-gold/60 p-5 rounded-md transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_35px_rgba(198,166,106,0.15)] flex flex-col justify-between"
+            >
               <div>
                 <div className="flex items-center justify-between mb-3.5">
                   <span className="text-[10px] font-serif tracking-[0.25em] text-luxury-gold/70 font-semibold">
@@ -135,7 +168,10 @@ export const Footer: React.FC = () => {
             </div>
 
             {/* Pillar 3: White-Glove Shipping */}
-            <div className="group relative bg-[#0D0B08]/80 hover:bg-[#120F0B] border border-luxury-gold/20 hover:border-luxury-gold/60 p-5 rounded-md transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_35px_rgba(198,166,106,0.15)] flex flex-col justify-between">
+            <div
+              data-testid="pillar-shipping"
+              className="group relative bg-[#0D0B08]/80 hover:bg-[#120F0B] border border-luxury-gold/20 hover:border-luxury-gold/60 p-5 rounded-md transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_35px_rgba(198,166,106,0.15)] flex flex-col justify-between"
+            >
               <div>
                 <div className="flex items-center justify-between mb-3.5">
                   <span className="text-[10px] font-serif tracking-[0.25em] text-luxury-gold/70 font-semibold">
@@ -159,7 +195,10 @@ export const Footer: React.FC = () => {
             </div>
 
             {/* Pillar 4: GST Invoicing */}
-            <div className="group relative bg-[#0D0B08]/80 hover:bg-[#120F0B] border border-luxury-gold/20 hover:border-luxury-gold/60 p-5 rounded-md transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_35px_rgba(198,166,106,0.15)] flex flex-col justify-between">
+            <div
+              data-testid="pillar-gst"
+              className="group relative bg-[#0D0B08]/80 hover:bg-[#120F0B] border border-luxury-gold/20 hover:border-luxury-gold/60 p-5 rounded-md transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_35px_rgba(198,166,106,0.15)] flex flex-col justify-between"
+            >
               <div>
                 <div className="flex items-center justify-between mb-3.5">
                   <span className="text-[10px] font-serif tracking-[0.25em] text-luxury-gold/70 font-semibold">
