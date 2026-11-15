@@ -4,7 +4,8 @@ import Image from "next/image";
 import LotCard from "@/components/catalogue/LotCard";
 import MonogramA from "@/components/brand/MonogramA";
 import CinematicHeroExperience from "@/components/experience/CinematicHeroExperience";
-import { mockListings, mockCategories } from "@/lib/data/mockCatalogue";
+import DepartmentsCarousel3D from "@/components/departments/DepartmentsCarousel3D";
+import { mockListings } from "@/lib/data/mockCatalogue";
 import {
   Gavel,
   ShieldCheck,
@@ -129,44 +130,9 @@ export default function HomePage() {
       </section>
 
       {/* ====================================================================
-          SECTION 4: THE 7 SPECIALIST DEPARTMENTS
+          SECTION 4: THE 7 SPECIALIST DEPARTMENTS (IMMERSIVE 3D SPATIAL CAROUSEL)
          ==================================================================== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-24 sm:mt-28">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs uppercase tracking-luxury text-luxury-gold">Curatorial Taxonomy</span>
-          <h2 className="font-serif text-3xl text-luxury-ivory font-medium mt-1">
-            The 7 Specialist Departments
-          </h2>
-          <p className="text-xs text-luxury-champagne/70 mt-2">
-            Each category is governed by independent authenticity standards, certified provenance requirements, and vetted condition ratings.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {mockCategories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/departments/${cat.slug}`}
-              className="card-luxury p-6 flex flex-col justify-between group hover:border-luxury-gold/50 transition-all duration-300"
-            >
-              <div>
-                <span className="text-[10px] font-mono text-luxury-gold/80 block mb-2">0{cat.display_order}</span>
-                <h3 className="font-serif text-lg text-luxury-ivory group-hover:text-luxury-gold transition-colors font-medium">
-                  {cat.name}
-                </h3>
-                <p className="text-xs text-luxury-muted mt-2 leading-relaxed">
-                  {cat.description}
-                </p>
-              </div>
-
-              <div className="mt-6 flex items-center justify-between text-[11px] text-luxury-champagne/70 border-t border-luxury-subtle/30 pt-3">
-                <span>Buyer&apos;s Premium: {cat.buyer_premium_pct}%</span>
-                <ChevronRight size={14} className="text-luxury-gold group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <DepartmentsCarousel3D />
 
       {/* ====================================================================
           SECTION 5: BUY NOW & EXCEPTIONAL OBJECTS (DUAL-SALE SAFE)
