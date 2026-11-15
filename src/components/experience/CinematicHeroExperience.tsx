@@ -12,11 +12,8 @@ import {
   Gem,
   Landmark,
   Globe,
-  Volume2,
-  VolumeX,
   Sparkles,
 } from "lucide-react";
-import AtmosphereAudioManager from "@/lib/audioManager";
 
 // Register GSAP plugins safely on client
 if (typeof window !== "undefined") {
@@ -104,20 +101,6 @@ export const CinematicHeroExperience: React.FC = () => {
   const chapterDomRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(-1);
   const activeChapterRef = useRef<number>(-1);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-
-  useEffect(() => {
-    const manager = AtmosphereAudioManager.getInstance();
-    const unsub = manager.subscribe((playing) => {
-      setIsPlayingAudio(playing);
-    });
-    return unsub;
-  }, []);
-
-  const handleToggleSound = () => {
-    const manager = AtmosphereAudioManager.getInstance();
-    manager.toggle();
-  };
 
   // Pointer & mouse tracking with window-level detection
   useEffect(() => {
@@ -661,10 +644,10 @@ export const CinematicHeroExperience: React.FC = () => {
           {/* Bottom: Trust Indicators & Scroll Indicator */}
           <div
             ref={heroTrustRef}
-            className="w-full max-w-6xl mx-auto px-4 pb-5 sm:pb-7 flex flex-col items-center gap-4 sm:gap-5 transition-all duration-300"
+            className="w-full max-w-5xl mx-auto px-4 pb-5 sm:pb-7 flex flex-col items-center gap-4 sm:gap-5 transition-all duration-300"
           >
             {/* Trust Indicators Row */}
-            <div className="w-full grid grid-cols-2 lg:grid-cols-4 items-center justify-center divide-y lg:divide-y-0 lg:divide-x divide-luxury-gold/25 py-3 border-y border-luxury-gold/25 bg-black/40 backdrop-blur-[2px]">
+            <div className="w-full max-w-4xl grid grid-cols-2 lg:grid-cols-4 items-center justify-center divide-y lg:divide-y-0 lg:divide-x divide-luxury-gold/25 py-2.5 border-y border-luxury-gold/25 bg-black/40 backdrop-blur-[2px]">
               <div className="flex items-center justify-center gap-2.5 py-2 sm:py-1.5 px-3 text-center">
                 <ShieldCheck size={16} className="text-luxury-gold shrink-0" />
                 <span className="text-[10px] sm:text-[11px] md:text-xs tracking-[0.18em] uppercase text-luxury-ivory/90 font-medium">
@@ -798,54 +781,6 @@ export const CinematicHeroExperience: React.FC = () => {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Right: Sound / Atmosphere Controller (ALWAYS Visible on Bottom Right) */}
-        <div className="absolute bottom-6 right-6 sm:right-12 z-40 pointer-events-auto">
-          <button
-            onClick={handleToggleSound}
-            data-cursor="SOUND"
-            className={`flex items-center gap-2.5 px-3.5 py-1.5 rounded-full backdrop-blur-md border transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.8)] ${
-              isPlayingAudio
-                ? "bg-black/80 border-luxury-gold text-luxury-gold shadow-[0_0_15px_rgba(212,175,55,0.35)]"
-                : "bg-black/60 border-luxury-gold/30 text-luxury-champagne/80 hover:text-luxury-gold hover:border-luxury-gold/60"
-            }`}
-            aria-label={isPlayingAudio ? "Mute gallery atmosphere" : "Play gallery atmosphere"}
-          >
-            {/* Dynamic Equalizer Wave Bars */}
-            <div className="flex items-end gap-[2.5px] h-3 w-3.5 shrink-0">
-              <span
-                className={`w-[2px] bg-luxury-gold rounded-full transition-all ${
-                  isPlayingAudio ? "animate-[soundWave1_0.8s_ease-in-out_infinite] h-full" : "h-[3px] opacity-40"
-                }`}
-              />
-              <span
-                className={`w-[2px] bg-luxury-gold rounded-full transition-all ${
-                  isPlayingAudio ? "animate-[soundWave2_0.6s_ease-in-out_infinite_0.15s] h-full" : "h-[5px] opacity-40"
-                }`}
-              />
-              <span
-                className={`w-[2px] bg-luxury-gold rounded-full transition-all ${
-                  isPlayingAudio ? "animate-[soundWave3_0.9s_ease-in-out_infinite_0.3s] h-full" : "h-[3px] opacity-40"
-                }`}
-              />
-              <span
-                className={`w-[2px] bg-luxury-gold rounded-full transition-all ${
-                  isPlayingAudio ? "animate-[soundWave4_0.7s_ease-in-out_infinite_0.2s] h-full" : "h-[4px] opacity-40"
-                }`}
-              />
-            </div>
-
-            <span className="text-[10px] tracking-[0.18em] uppercase font-medium">
-              {isPlayingAudio ? "Atmosphere Playing" : "Atmosphere Muted"}
-            </span>
-
-            {isPlayingAudio ? (
-              <Volume2 size={13} className="text-luxury-gold" />
-            ) : (
-              <VolumeX size={13} className="text-luxury-champagne/60" />
-            )}
-          </button>
         </div>
       </div>
     </section>

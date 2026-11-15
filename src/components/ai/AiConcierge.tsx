@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { mockListings } from "@/lib/data/mockCatalogue";
 import { formatINR } from "@/lib/currency";
+import AtmosphereSoundController from "@/components/audio/AtmosphereSoundController";
 import {
   Sparkles,
   MessageSquare,
@@ -70,24 +71,31 @@ export const AiConcierge: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 max-w-[calc(100vw-2rem)]">
-      {/* Floating Toggle Button */}
+    <aside
+      aria-label="Interactive Curatorial Tools"
+      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-2.5 pointer-events-none max-w-[calc(100vw-2rem)]"
+    >
+      {/* 1. Gallery Atmosphere Audio Pill (Top) */}
+      <AtmosphereSoundController className="pointer-events-auto" />
+
+      {/* 2. Floating Toggle Button (Bottom) */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2.5 px-4 py-3 bg-luxury-dark/95 hover:bg-luxury-gold text-luxury-gold hover:text-luxury-black border border-luxury-gold/50 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all duration-300 group"
+          data-cursor="CONCIERGE"
+          className="pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 bg-[#0A0907]/90 hover:bg-luxury-gold text-luxury-gold hover:text-luxury-black border border-luxury-gold/50 rounded-full shadow-[0_8px_25px_rgba(0,0,0,0.8)] backdrop-blur-xl transition-all duration-300 group"
           aria-label="Open AI Curatorial Concierge"
         >
-          <Sparkles size={16} className="text-luxury-gold group-hover:text-luxury-black animate-pulse" />
-          <span className="text-xs uppercase tracking-luxury font-medium font-sans">
+          <Sparkles size={15} className="text-luxury-gold group-hover:text-luxury-black animate-pulse" />
+          <span className="text-[11px] uppercase tracking-[0.2em] font-medium font-sans">
             Curatorial Concierge
           </span>
         </button>
       )}
 
-      {/* Chat Window */}
+      {/* 3. Chat Window */}
       {isOpen && (
-        <div className="w-[calc(100vw-2rem)] sm:w-[380px] max-w-[400px] h-[480px] sm:h-[520px] bg-luxury-black/95 border border-luxury-gold/40 rounded-sm shadow-2xl backdrop-blur-xl flex flex-col justify-between overflow-hidden animate-fadeIn">
+        <div className="pointer-events-auto w-[calc(100vw-2rem)] sm:w-[380px] max-w-[400px] h-[480px] sm:h-[520px] bg-luxury-black/95 border border-luxury-gold/40 rounded-sm shadow-2xl backdrop-blur-xl flex flex-col justify-between overflow-hidden animate-fadeIn">
           {/* Header */}
           <div className="bg-luxury-dark/90 p-4 border-b border-luxury-champagne/15 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -164,7 +172,7 @@ export const AiConcierge: React.FC = () => {
           </form>
         </div>
       )}
-    </div>
+    </aside>
   );
 };
 

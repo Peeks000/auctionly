@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import AtmosphereAudioManager from "@/lib/audioManager";
 import { Volume2, VolumeX } from "lucide-react";
 
-export const AtmosphereSoundController: React.FC = () => {
+export const AtmosphereSoundController: React.FC<{ className?: string }> = ({ className = "" }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0);
 
@@ -23,9 +23,10 @@ export const AtmosphereSoundController: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 sm:bottom-6 sm:right-56 z-40 pointer-events-auto">
+    <div className={`pointer-events-auto ${className}`}>
       <button
         onClick={handleToggle}
+        data-cursor="SOUND"
         className={`group flex items-center gap-2.5 px-3.5 py-2.5 rounded-full backdrop-blur-xl border transition-all duration-300 shadow-[0_8px_25px_rgba(0,0,0,0.8)] ${
           isPlaying
             ? "bg-[#0A0907]/90 border-luxury-gold/60 text-luxury-gold shadow-[0_0_20px_rgba(198,166,106,0.35)]"
