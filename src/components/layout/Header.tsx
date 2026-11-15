@@ -41,29 +41,35 @@ export const Header: React.FC = () => {
         <LogoWordmark showTagline={!isHome} monogramSize={32} />
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-7">
           <Link
             href="/catalogue"
-            className="text-xs uppercase tracking-[0.2em] text-luxury-ivory/85 hover:text-luxury-gold transition-colors font-medium"
+            className="text-xs uppercase tracking-[0.18em] text-luxury-ivory/85 hover:text-luxury-gold transition-colors font-medium"
           >
             Curated Lots
           </Link>
           <Link
+            href="/auctions"
+            className="text-xs uppercase tracking-[0.18em] text-luxury-ivory/85 hover:text-luxury-gold transition-colors font-medium"
+          >
+            Timed Auctions
+          </Link>
+          <Link
             href="/live"
-            className="text-xs uppercase tracking-[0.2em] text-luxury-ivory/90 hover:text-luxury-gold transition-colors flex items-center gap-2 font-medium"
+            className="text-xs uppercase tracking-[0.18em] text-luxury-ivory/90 hover:text-luxury-gold transition-colors flex items-center gap-1.5 font-medium"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-            <span>Live Auctions</span>
+            <span>Live Gala</span>
           </Link>
           <Link
             href="/departments"
-            className="text-xs uppercase tracking-[0.2em] text-luxury-ivory/85 hover:text-luxury-gold transition-colors font-medium"
+            className="text-xs uppercase tracking-[0.18em] text-luxury-ivory/85 hover:text-luxury-gold transition-colors font-medium"
           >
-            Departments
+            7 Departments
           </Link>
           <Link
             href="/journal"
-            className="text-xs uppercase tracking-[0.2em] text-luxury-ivory/85 hover:text-luxury-gold transition-colors font-medium"
+            className="text-xs uppercase tracking-[0.18em] text-luxury-ivory/85 hover:text-luxury-gold transition-colors font-medium"
           >
             The Journal
           </Link>
@@ -129,7 +135,7 @@ export const Header: React.FC = () => {
             onClick={() => setMobileMenuOpen(false)}
             className="text-sm uppercase tracking-luxury text-luxury-gold flex items-center justify-between py-2 border-b border-luxury-subtle/30"
           >
-            <span>Live Auctions</span>
+            <span>Live Gala</span>
             <span className="w-2 h-2 rounded-full bg-status-live animate-ping" />
           </Link>
           <Link
@@ -144,7 +150,7 @@ export const Header: React.FC = () => {
             onClick={() => setMobileMenuOpen(false)}
             className="text-sm uppercase tracking-luxury text-luxury-ivory hover:text-luxury-gold py-2 border-b border-luxury-subtle/30"
           >
-            Departments
+            7 Departments
           </Link>
           <Link
             href="/journal"

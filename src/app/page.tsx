@@ -31,32 +31,33 @@ export default function HomePage() {
       {/* ====================================================================
           SECTION 1: THE GRAND GALLERY HERO (EXACT REFERENCE RECREATION)
          ==================================================================== */}
-      <section className="relative w-full min-h-[94vh] lg:min-h-screen bg-[#000000] flex flex-col justify-between items-center overflow-hidden border-b border-luxury-champagne/15 select-none">
-        {/* Layer 1: Base Museum Gallery Backdrop Plate (Cleaned, 1080p, No baked-in text) */}
-        <div className="absolute inset-0 z-0">
+      <section className="relative w-full h-[100svh] min-h-[680px] max-h-[1200px] bg-[#000000] flex flex-col justify-between items-center overflow-hidden border-b border-luxury-champagne/15 select-none">
+        {/* Layer 1: Base Museum Gallery Backdrop Plate (Exact reference asset from public/images/) */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <Image
-            src="/hero/gallery-stage-hd.webp"
-            alt="AUCTIONLY Fine Art & Antiquities Museum Gallery"
+            src="/images/auctionly-hero-gallery.png"
+            alt="AUCTIONLY Classical Museum Gallery with Greco-Roman Bust"
             fill
             priority
             sizes="100vw"
-            className="object-cover object-center transform scale-100 transition-transform duration-1000 ease-out"
+            quality={95}
+            className="object-cover object-center animate-fadeIn duration-1000 transform scale-100"
           />
         </div>
 
         {/* Layer 2: Atmospheric Lighting & Volumetric Rays (Entering from top-right across bust) */}
-        <div className="absolute inset-0 z-10 pointer-events-none bg-[linear-gradient(225deg,rgba(255,225,160,0.18)_0%,rgba(212,175,55,0.06)_28%,transparent_60%)] mix-blend-screen" />
-        <div className="absolute inset-0 z-10 pointer-events-none bg-[radial-gradient(circle_at_50%_42%,rgba(212,175,55,0.12)_0%,transparent_50%)]" />
+        <div className="absolute inset-0 z-10 pointer-events-none bg-[linear-gradient(225deg,rgba(255,225,160,0.14)_0%,rgba(212,175,55,0.05)_26%,transparent_60%)] mix-blend-screen" />
+        <div className="absolute inset-0 z-10 pointer-events-none bg-[radial-gradient(circle_at_50%_40%,rgba(212,175,55,0.08)_0%,transparent_50%)]" />
 
-        {/* Layer 3: Edge Vignettes (Fading smoothly into pure #000000 background) */}
-        <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#000000] via-[#000000]/70 to-transparent pointer-events-none z-10" />
-        <div className="absolute bottom-0 inset-x-0 h-36 bg-gradient-to-t from-[#000000] via-[#000000]/80 to-transparent pointer-events-none z-10" />
-        <div className="absolute inset-y-0 left-0 w-20 sm:w-32 bg-gradient-to-r from-[#000000] to-transparent pointer-events-none z-10" />
-        <div className="absolute inset-y-0 right-0 w-20 sm:w-32 bg-gradient-to-l from-[#000000] to-transparent pointer-events-none z-10" />
+        {/* Layer 3: Edge Vignettes (Subtle gradient overlays for pristine readability while preserving lighting) */}
+        <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#000000]/80 via-[#000000]/40 to-transparent pointer-events-none z-10" />
+        <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#000000]/85 via-[#000000]/45 to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-[#000000]/60 to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-[#000000]/60 to-transparent pointer-events-none z-10" />
 
         {/* Top Content: Main Headline & Tagline */}
-        <div className="relative z-20 text-center pt-8 sm:pt-10 lg:pt-12 px-4 w-full max-w-5xl mx-auto flex flex-col items-center">
-          <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-[6.5rem] tracking-[0.24em] sm:tracking-[0.28em] text-[#F7F3EB] uppercase font-normal leading-none drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
+        <div className="relative z-20 text-center pt-6 sm:pt-8 md:pt-10 lg:pt-12 px-4 w-full max-w-5xl mx-auto flex flex-col items-center">
+          <h1 className="font-serif text-[clamp(2.75rem,7vw,6.5rem)] tracking-[0.22em] sm:tracking-[0.28em] text-[#F7F3EB] uppercase font-normal leading-none drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
             AUCTIONLY
           </h1>
           <div className="mt-3 sm:mt-4 flex items-center justify-center gap-3 sm:gap-6 w-full max-w-md sm:max-w-lg">
@@ -68,8 +69,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Center: Interactive Call-To-Action Buttons (Positioned directly beneath the bust/plinth) */}
-        <div className="relative z-20 flex flex-wrap items-center justify-center gap-4 sm:gap-6 px-4 my-auto pt-44 sm:pt-60 md:pt-72 lg:pt-80">
+        {/* Center: Interactive Call-To-Action Buttons (Positioned directly beneath the sculpture on plinth) */}
+        <div className="relative z-20 flex flex-wrap items-center justify-center gap-4 sm:gap-6 px-4 my-auto pt-48 sm:pt-60 md:pt-72 lg:pt-80">
           <Link
             href="/catalogue"
             className="group px-6 sm:px-8 py-3 sm:py-3.5 bg-[#C6A66A] hover:bg-[#D4AF37] text-[#0A0907] font-semibold text-xs sm:text-sm tracking-[0.2em] uppercase transition-all duration-300 shadow-[0_8px_25px_rgba(198,166,106,0.35)] hover:shadow-[0_12px_32px_rgba(198,166,106,0.5)] flex items-center gap-2.5 active:scale-[0.98]"
@@ -81,7 +82,7 @@ export default function HomePage() {
 
           <Link
             href="/live"
-            className="group px-6 sm:px-8 py-3 sm:py-3.5 bg-black/70 hover:bg-black/90 border border-luxury-gold/70 hover:border-luxury-gold text-luxury-champagne hover:text-luxury-ivory font-medium text-xs sm:text-sm tracking-[0.2em] uppercase transition-all duration-300 backdrop-blur-md flex items-center gap-2.5 active:scale-[0.98]"
+            className="group px-6 sm:px-8 py-3 sm:py-3.5 bg-black/60 hover:bg-black/85 border border-luxury-gold/70 hover:border-luxury-gold text-luxury-ivory font-medium text-xs sm:text-sm tracking-[0.2em] uppercase transition-all duration-300 backdrop-blur-md flex items-center gap-2.5 active:scale-[0.98]"
           >
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
             <span>Live Auctions</span>
@@ -90,49 +91,53 @@ export default function HomePage() {
         </div>
 
         {/* Bottom Content: Trust Indicators & Scroll Indicator */}
-        <div className="relative z-20 w-full max-w-6xl mx-auto px-4 pb-6 sm:pb-8 flex flex-col items-center gap-5 sm:gap-6">
-          {/* Trust Indicators Row with Thin Vertical Dividers */}
+        <div className="relative z-20 w-full max-w-6xl mx-auto px-4 pb-5 sm:pb-7 flex flex-col items-center gap-4 sm:gap-5">
+          {/* Trust Indicators Row with Subtle Vertical Gold Dividers */}
           <div className="w-full grid grid-cols-2 lg:grid-cols-4 items-center justify-center divide-y lg:divide-y-0 lg:divide-x divide-luxury-gold/25 py-3 border-y border-luxury-gold/25 bg-black/40 backdrop-blur-[2px]">
-            <div className="flex items-center justify-center gap-2.5 py-2.5 sm:py-2 px-3 text-center">
+            <div className="flex items-center justify-center gap-2.5 py-2 sm:py-1.5 px-3 text-center">
               <ShieldCheck size={16} className="text-luxury-gold shrink-0" />
               <span className="text-[10px] sm:text-[11px] md:text-xs tracking-[0.18em] uppercase text-luxury-ivory/90 font-medium">
                 Verified Provenance
               </span>
             </div>
-            <div className="flex items-center justify-center gap-2.5 py-2.5 sm:py-2 px-3 text-center">
+            <div className="flex items-center justify-center gap-2.5 py-2 sm:py-1.5 px-3 text-center">
               <Gem size={16} className="text-luxury-gold shrink-0" />
               <span className="text-[10px] sm:text-[11px] md:text-xs tracking-[0.18em] uppercase text-luxury-ivory/90 font-medium">
                 Curated Collections
               </span>
             </div>
-            <div className="flex items-center justify-center gap-2.5 py-2.5 sm:py-2 px-3 text-center">
+            <div className="flex items-center justify-center gap-2.5 py-2 sm:py-1.5 px-3 text-center">
               <Landmark size={16} className="text-luxury-gold shrink-0" />
               <span className="text-[10px] sm:text-[11px] md:text-xs tracking-[0.18em] uppercase text-luxury-ivory/90 font-medium">
                 Specialist Departments
               </span>
             </div>
-            <div className="flex items-center justify-center gap-2.5 py-2.5 sm:py-2 px-3 text-center">
+            <div className="flex items-center justify-center gap-2.5 py-2 sm:py-1.5 px-3 text-center">
               <Globe size={16} className="text-luxury-gold shrink-0" />
               <span className="text-[10px] sm:text-[11px] md:text-xs tracking-[0.18em] uppercase text-luxury-ivory/90 font-medium">
-                India&apos;s Private Auction House®
+                India&apos;s Private Auction House
               </span>
             </div>
           </div>
 
-          {/* Scroll to Discover */}
-          <div className="flex flex-col items-center gap-1.5 pt-1">
-            <span className="text-[9px] sm:text-[10px] tracking-[0.3em] uppercase text-luxury-champagne/75 font-light">
+          {/* Scroll to Discover linked to #featured-auctions */}
+          <Link
+            href="#featured-auctions"
+            className="flex flex-col items-center gap-1.5 pt-1 group cursor-pointer focus:outline-none"
+            aria-label="Scroll to Discover Featured Auctions"
+          >
+            <span className="text-[9px] sm:text-[10px] tracking-[0.3em] uppercase text-luxury-champagne/75 group-hover:text-luxury-gold transition-colors font-light">
               Scroll to Discover
             </span>
-            <div className="w-[1px] h-8 sm:h-10 bg-gradient-to-b from-luxury-gold via-luxury-gold/50 to-transparent animate-pulse" />
-          </div>
+            <div className="w-[1px] h-7 sm:h-9 bg-gradient-to-b from-luxury-gold via-luxury-gold/50 to-transparent animate-pulse group-hover:h-11 transition-all" />
+          </Link>
         </div>
       </section>
 
       {/* ====================================================================
           SECTION 2: FEATURED TIMED AUCTIONS (AUTHORITATIVE ENGINE)
          ==================================================================== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <section id="featured-auctions" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full scroll-mt-24">
         <div className="flex flex-col md:flex-row items-baseline justify-between mb-10 pb-4 border-b border-luxury-champagne/15 gap-4">
           <div>
             <div className="flex items-center gap-2 text-luxury-gold text-xs uppercase tracking-luxury mb-1">
