@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/TestSprite/testsprite-cli/v0.16.0/schemas/plan.schema.json",
+  "projectId": "4e8d0122-f7df-45da-9807-0de6b738b4e0",
+  "type": "frontend",
+  "name": "Catalogue 3D Lot Cards and Interactive Product Detail 3D Stage",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Navigate to /catalogue and verify the curated lots catalogue loads"
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the 3D Interactive badge is visible on the auction lot cards"
+    },
+    {
+      "type": "action",
+      "description": "Click on the Mughal Basra Pearl Sautoir lot card or link to open its detail page"
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the Interactive 3D Stage tab is active and the 3D canvas is present"
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the 3D action controls for Zoom In, Zoom Out, and Reset View are visible"
+    }
+  ]
+}

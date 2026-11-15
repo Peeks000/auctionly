@@ -3,9 +3,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { formatINR } from "@/lib/currency";
 import { Listing, Auction } from "@/types";
 import { Clock, ShieldCheck, Bookmark, Gavel, Eye, Sparkles } from "lucide-react";
+
+// Dynamically import 3D preview with SSR disabled for optimal client-side WebGL lifecycle
+const LotCard3DPreview = dynamic(() => import("@/components/three/LotCard3DPreview"), {
+  ssr: false,
+});
 
 interface LotCardProps {
   listing: Listing & { auction?: Auction };
@@ -137,17 +143,29 @@ export const LotCard: React.FC<LotCardProps> = ({ listing, priority = false }) =
         <div>
           {/* Image Container with Badges */}
         <div className="relative w-full h-72 bg-luxury-dark/90 overflow-hidden">
-          <Link href={`/lot/${listing.slug}`} tabIndex={-1}>
-            <Image
-              src={listing.primary_image_url}
-              alt={listing.title}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-              priority={priority}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-luxury-black via-transparent to-black/30 opacity-70 group-hover:opacity-40 transition-opacity" />
-          </Link>
+          {listing.model_3d_url ? (
+            <Link href={`/lot/${listing.slug}`} tabIndex={-1} className="block w-full h-full">
+              <LotCard3DPreview
+                modelUrl={listing.model_3d_url}
+                fallbackImageUrl={listing.primary_image_url}
+                title={listing.title}
+                slug={listing.slug}
+                priority={priority}
+              />
+            </Link>
+          ) : (
+            <Link href={`/lot/${listing.slug}`} tabIndex={-1} className="block w-full h-full">
+              <Image
+                src={listing.primary_image_url}
+                alt={listing.title}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                priority={priority}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-luxury-black via-transparent to-black/30 opacity-70 group-hover:opacity-40 transition-opacity" />
+            </Link>
+          )}
 
           {/* Top Status Indicators */}
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">

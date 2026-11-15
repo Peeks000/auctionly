@@ -102,7 +102,7 @@ export const mockListings: (Listing & { auction?: Auction })[] = [
       "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=80",
     ],
-    model_3d_url: "/models/emerald_pendant.glb",
+    model_3d_url: "/3D-element/jewelry-necklace.glb",
     sale_format: "timed_auction",
     starting_price: 350000000, // ₹35,00,000 in Paisa
     reserve_price: 450000000,  // ₹45,00,000 in Paisa
@@ -154,7 +154,7 @@ export const mockListings: (Listing & { auction?: Auction })[] = [
     gallery_image_urls: [
       "https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?auto=format&fit=crop&w=1200&q=80",
     ],
-    model_3d_url: null,
+    model_3d_url: "/3D-element/horse-painting.glb",
     sale_format: "timed_auction",
     starting_price: 1200000000, // ₹1,20,00,000 in Paisa
     reserve_price: 1500000000,  // ₹1,50,00,000
@@ -206,7 +206,7 @@ export const mockListings: (Listing & { auction?: Auction })[] = [
     gallery_image_urls: [
       "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=1200&q=80",
     ],
-    model_3d_url: "/models/patek_2499.glb",
+    model_3d_url: "/3D-element/luxury-wristwatch.glb",
     sale_format: "live_auction",
     starting_price: 3800000000, // ₹3,80,00,000 in Paisa
     reserve_price: 4500000000,
@@ -258,7 +258,7 @@ export const mockListings: (Listing & { auction?: Auction })[] = [
     gallery_image_urls: [
       "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1200&q=80",
     ],
-    model_3d_url: "/models/kangaroo_chair.glb",
+    model_3d_url: "/3D-element/wooden-lounge-chair.glb",
     sale_format: "hybrid_auction_buynow",
     starting_price: 180000000, // ₹18,00,000 in Paisa
     reserve_price: 220000000,
@@ -308,7 +308,7 @@ export const mockListings: (Listing & { auction?: Auction })[] = [
     authenticity_status: "verified",
     primary_image_url: "https://images.unsplash.com/photo-1621416894569-0f39ed31d247?auto=format&fit=crop&w=1200&q=80",
     gallery_image_urls: [],
-    model_3d_url: null,
+    model_3d_url: "/3D-element/gold-coin.glb",
     sale_format: "timed_auction",
     starting_price: 85000000, // ₹8,50,000 in Paisa
     reserve_price: 110000000,
@@ -358,7 +358,7 @@ export const mockListings: (Listing & { auction?: Auction })[] = [
     authenticity_status: "verified",
     primary_image_url: "https://images.unsplash.com/photo-1544967082-d9d25d867d66?auto=format&fit=crop&w=1200&q=80",
     gallery_image_urls: [],
-    model_3d_url: "/models/chola_somaskanda.glb",
+    model_3d_url: "/3D-element/bronze-deity-family.glb",
     sale_format: "live_auction",
     starting_price: 2500000000, // ₹2,50,00,000 in Paisa
     reserve_price: 3200000000,
