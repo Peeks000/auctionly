@@ -1,0 +1,311 @@
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import HeroScene3D from "@/components/three/HeroScene3D";
+import LotCard from "@/components/catalogue/LotCard";
+import MonogramA from "@/components/brand/MonogramA";
+import { mockListings, mockCategories } from "@/lib/data/mockCatalogue";
+import {
+  Gavel,
+  ShieldCheck,
+  Sparkles,
+  ArrowRight,
+  Clock,
+  Compass,
+  Award,
+  ChevronRight,
+  Lock,
+  Layers,
+} from "lucide-react";
+
+export default function HomePage() {
+  const featuredLots = mockListings.filter((l) => l.is_featured);
+  const endingSoonLots = mockListings.filter((l) => l.auction?.status === "active");
+  const liveLots = mockListings.filter((l) => l.auction?.is_live);
+  const buyNowLots = mockListings.filter((l) => l.buy_now_price !== null);
+
+  return (
+    <div className="flex flex-col gap-24 pb-20">
+      {/* ====================================================================
+          SECTION 1: CINEMATIC 3D HERO EXPERIENCE
+         ==================================================================== */}
+      <section className="relative min-h-[90vh] flex items-center justify-center pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-b border-luxury-champagne/15 overflow-hidden">
+        {/* Deep ambient background vignette */}
+        <div className="absolute inset-0 bg-dark-radial pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(198,166,106,0.08)_0%,transparent_50%)] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+          {/* Left Column: Brand & Tagline Messaging */}
+          <div className="lg:col-span-6 flex flex-col gap-6 text-left">
+            <div className="inline-flex items-center gap-2.5 px-3 py-1 bg-luxury-dark/90 border border-luxury-champagne/20 w-fit">
+              <MonogramA size={18} glow />
+              <span className="text-[10px] tracking-[0.25em] uppercase text-luxury-champagne font-medium">
+                The Premier Digital Auction House
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold text-luxury-ivory tracking-tight leading-[1.15]">
+                Own the <br />
+                <span className="text-gold-gradient italic font-normal">Extraordinary.</span>
+              </h1>
+              <p className="text-sm sm:text-base text-luxury-champagne/80 font-sans leading-relaxed max-w-xl mt-3">
+                Curating rare masterpieces, royal antiquities, vintage horology, and museum-grade collectibles.
+                Authoritative server-side bidding in Indian Rupees (₹) with guaranteed provenance.
+              </p>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap items-center gap-4 pt-4">
+              <Link
+                href="/auctions"
+                className="px-6 py-3.5 bg-luxury-gold hover:bg-luxury-goldLight text-luxury-black font-semibold uppercase tracking-luxury text-xs transition-all duration-300 shadow-[0_10px_25px_rgba(198,166,106,0.3)] flex items-center gap-2"
+              >
+                <Gavel size={16} />
+                <span>Explore Live Bidding</span>
+              </Link>
+
+              <Link
+                href="/catalogue"
+                className="px-6 py-3.5 bg-luxury-dark hover:bg-luxury-elevated text-luxury-ivory border border-luxury-champagne/30 uppercase tracking-luxury text-xs transition-all duration-300 flex items-center gap-2"
+              >
+                <span>Curated Catalogue</span>
+                <ArrowRight size={14} className="text-luxury-gold" />
+              </Link>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-3 gap-6 pt-6 border-t border-luxury-subtle/40 mt-4 text-luxury-champagne/90">
+              <div>
+                <span className="block font-serif text-2xl font-semibold text-luxury-ivory">₹100 Cr+</span>
+                <span className="text-[10px] uppercase tracking-luxury text-luxury-muted">Verified Provenance</span>
+              </div>
+              <div>
+                <span className="block font-serif text-2xl font-semibold text-luxury-ivory">100%</span>
+                <span className="text-[10px] uppercase tracking-luxury text-luxury-muted">Authoritative Bids</span>
+              </div>
+              <div>
+                <span className="block font-serif text-2xl font-semibold text-luxury-ivory">7</span>
+                <span className="text-[10px] uppercase tracking-luxury text-luxury-muted">Specialist Departments</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: 3D Interactive Stage */}
+          <div className="lg:col-span-6 w-full">
+            <HeroScene3D />
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          SECTION 2: FEATURED TIMED AUCTIONS (AUTHORITATIVE ENGINE)
+         ==================================================================== */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex flex-col md:flex-row items-baseline justify-between mb-10 pb-4 border-b border-luxury-champagne/15 gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-luxury-gold text-xs uppercase tracking-luxury mb-1">
+              <Sparkles size={14} />
+              <span>Marquee Offerings</span>
+            </div>
+            <h2 className="font-serif text-3xl text-luxury-ivory font-medium">
+              Featured Auctions
+            </h2>
+          </div>
+          <Link
+            href="/auctions"
+            className="text-xs uppercase tracking-luxury text-luxury-champagne hover:text-luxury-gold flex items-center gap-1.5 transition-colors"
+          >
+            <span>View All Active Lots</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {featuredLots.map((listing, index) => (
+            <LotCard key={listing.id} listing={listing} priority={index === 0} />
+          ))}
+        </div>
+      </section>
+
+      {/* ====================================================================
+          SECTION 3: LIVE GALA ROOM PREVIEW
+         ==================================================================== */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="relative rounded-sm bg-gradient-to-r from-luxury-dark via-luxury-charcoal to-luxury-dark border border-luxury-gold/40 p-8 sm:p-12 overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-luxury-gold/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+            <div className="lg:col-span-7 flex flex-col gap-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-status-live/20 border border-status-live text-status-live text-[10px] uppercase tracking-wider font-semibold w-fit">
+                <span className="w-2 h-2 rounded-full bg-status-live animate-ping" />
+                <span>Next Scheduled Live Gala</span>
+              </div>
+
+              <h2 className="font-serif text-3xl sm:text-4xl text-luxury-ivory font-medium leading-tight">
+                The Imperial Heritage Evening Sale
+              </h2>
+
+              <p className="text-xs sm:text-sm text-luxury-champagne/80 font-sans leading-relaxed max-w-xl">
+                Experience real-time interactive hammer bidding with our certified Professional Auctioneer.
+                Featuring royal Rajputana jewels, Mughal numismatic rarities, and Chola bronzes.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-6 pt-3 text-xs text-luxury-champagne">
+                <div className="flex items-center gap-2">
+                  <Clock size={16} className="text-luxury-gold" />
+                  <span>Sunday Gala, 7:00 PM IST</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Gavel size={16} className="text-luxury-gold" />
+                  <span>34 Sequential Lots</span>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <Link
+                  href="/live"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-luxury-gold hover:bg-luxury-goldLight text-luxury-black font-semibold text-xs uppercase tracking-luxury transition-all"
+                >
+                  <Gavel size={14} />
+                  <span>Enter Live Auction Room</span>
+                </Link>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 relative h-72 rounded-sm overflow-hidden border border-luxury-champagne/20">
+              <Image
+                src="https://images.unsplash.com/photo-1544967082-d9d25d867d66?auto=format&fit=crop&w=1200&q=80"
+                alt="Marquee Lot Somaskanda Bronze"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-luxury-black via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <span className="text-[10px] tracking-widest uppercase text-luxury-champagne/80 block">Lot 14 Marquee</span>
+                <span className="font-serif text-sm text-luxury-ivory font-medium">Chola Dynasty Somaskanda Bronze (11th Century)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          SECTION 4: THE 7 SPECIALIST DEPARTMENTS
+         ==================================================================== */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <span className="text-xs uppercase tracking-luxury text-luxury-gold">Curatorial Taxonomy</span>
+          <h2 className="font-serif text-3xl text-luxury-ivory font-medium mt-1">
+            The 7 Specialist Departments
+          </h2>
+          <p className="text-xs text-luxury-champagne/70 mt-2">
+            Each category is governed by independent authenticity standards, certified provenance requirements, and vetted condition ratings.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {mockCategories.map((cat) => (
+            <Link
+              key={cat.id}
+              href={`/departments/${cat.slug}`}
+              className="card-luxury p-6 flex flex-col justify-between group hover:border-luxury-gold/50 transition-all duration-300"
+            >
+              <div>
+                <span className="text-[10px] font-mono text-luxury-gold/80 block mb-2">0{cat.display_order}</span>
+                <h3 className="font-serif text-lg text-luxury-ivory group-hover:text-luxury-gold transition-colors font-medium">
+                  {cat.name}
+                </h3>
+                <p className="text-xs text-luxury-muted mt-2 leading-relaxed">
+                  {cat.description}
+                </p>
+              </div>
+
+              <div className="mt-6 flex items-center justify-between text-[11px] text-luxury-champagne/70 border-t border-luxury-subtle/30 pt-3">
+                <span>Buyer&apos;s Premium: {cat.buyer_premium_pct}%</span>
+                <ChevronRight size={14} className="text-luxury-gold group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ====================================================================
+          SECTION 5: BUY NOW & EXCEPTIONAL OBJECTS (DUAL-SALE SAFE)
+         ==================================================================== */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex flex-col md:flex-row items-baseline justify-between mb-10 pb-4 border-b border-luxury-champagne/15 gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-luxury-gold text-xs uppercase tracking-luxury mb-1">
+              <Lock size={14} />
+              <span>Immediate Acquisition</span>
+            </div>
+            <h2 className="font-serif text-3xl text-luxury-ivory font-medium">
+              Fixed-Price Curated Lots
+            </h2>
+          </div>
+          <p className="text-xs text-luxury-champagne/70 max-w-md">
+            Acquire immediately without waiting for auction closure. Inventory is locked atomically against concurrent bidding.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {buyNowLots.map((listing) => (
+            <LotCard key={listing.id} listing={listing} />
+          ))}
+        </div>
+      </section>
+
+      {/* ====================================================================
+          SECTION 6: CONSIGNMENT STUDIO & SELLER HIGHLIGHTS
+         ==================================================================== */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="bg-luxury-dark/90 border border-luxury-champagne/20 rounded-sm p-8 sm:p-14 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-8 flex flex-col gap-4">
+            <span className="text-xs uppercase tracking-luxury text-luxury-gold font-medium">
+              Seller Consignment Studio
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl text-luxury-ivory font-medium">
+              Consign with Confidence. Reach Discerning Global Collectors.
+            </h2>
+            <p className="text-xs sm:text-sm text-luxury-champagne/80 font-sans leading-relaxed max-w-2xl">
+              We provide independent collectors, galleries, and estates with 3D model processing, AI description enrichment, transparent reserve pricing, and automated GST-compliant settlement ledgers.
+            </p>
+            <div className="flex flex-wrap items-center gap-4 pt-4">
+              <Link
+                href="/studio"
+                className="px-6 py-3 bg-luxury-gold hover:bg-luxury-goldLight text-luxury-black font-semibold text-xs uppercase tracking-luxury transition-all"
+              >
+                Launch Seller Studio
+              </Link>
+              <Link
+                href="/studio/valuation"
+                className="px-6 py-3 border border-luxury-champagne/30 hover:border-luxury-gold text-luxury-ivory text-xs uppercase tracking-luxury transition-all"
+              >
+                Request Free Specialist Appraisal
+              </Link>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 bg-luxury-black p-6 border border-luxury-subtle/40 rounded-sm flex flex-col gap-4">
+            <h4 className="font-serif text-base text-luxury-ivory font-medium">Consignment Guarantees</h4>
+            <ul className="flex flex-col gap-3 text-xs text-luxury-champagne/80">
+              <li className="flex items-start gap-2">
+                <ShieldCheck size={16} className="text-luxury-gold shrink-0 mt-0.5" />
+                <span>Protected private reserve amounts. Lots never sell below your floor.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Award size={16} className="text-luxury-gold shrink-0 mt-0.5" />
+                <span>Competitive 8% commission on realized hammer prices.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Layers size={16} className="text-luxury-gold shrink-0 mt-0.5" />
+                <span>Comprehensive white-glove logistics & transit insurance assistance.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

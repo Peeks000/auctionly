@@ -1,0 +1,43 @@
+import type { Metadata } from "next";
+import "./globals.css";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import AiConcierge from "@/components/ai/AiConcierge";
+
+export const metadata: Metadata = {
+  title: "AUCTIONLY — Own the Extraordinary.",
+  description:
+    "A premier digital auction house and curated marketplace for exceptional fine art, rare antiquities, vintage horology, and high-value collectibles. India-first with authoritative INR settlement.",
+  keywords: [
+    "Luxury Auction",
+    "Fine Art",
+    "Antiques",
+    "Rare Watches",
+    "Numismatics",
+    "Jewellery",
+    "India Luxury Marketplace",
+    "Sotheby's India Alternative",
+  ],
+  authors: [{ name: "AUCTIONLY Curatorial House" }],
+  viewport: "width=device-width, initial-scale=1, maximum-scale=5",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" className="dark scroll-smooth">
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </head>
+      <body className="min-h-screen bg-luxury-black text-luxury-ivory flex flex-col selection:bg-luxury-gold selection:text-luxury-black">
+        <Header />
+        <main className="flex-1 w-full">{children}</main>
+        <AiConcierge />
+        <Footer />
+      </body>
+    </html>
+  );
+}
