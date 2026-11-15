@@ -1,7 +1,6 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import HeroScene3D from "@/components/three/HeroScene3D";
 import LotCard from "@/components/catalogue/LotCard";
 import MonogramA from "@/components/brand/MonogramA";
 import { mockListings, mockCategories } from "@/lib/data/mockCatalogue";
@@ -16,6 +15,9 @@ import {
   ChevronRight,
   Lock,
   Layers,
+  Gem,
+  Landmark,
+  Globe,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -25,78 +27,104 @@ export default function HomePage() {
   const buyNowLots = mockListings.filter((l) => l.buy_now_price !== null);
 
   return (
-    <div className="flex flex-col gap-24 pb-20">
+    <div className="flex flex-col gap-24 pb-20 bg-[#000000]">
       {/* ====================================================================
-          SECTION 1: CINEMATIC 3D HERO EXPERIENCE
+          SECTION 1: THE GRAND GALLERY HERO (EXACT REFERENCE RECREATION)
          ==================================================================== */}
-      <section className="relative min-h-[90vh] flex items-center justify-center pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-b border-luxury-champagne/15 overflow-hidden">
-        {/* Deep ambient background vignette */}
-        <div className="absolute inset-0 bg-dark-radial pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(198,166,106,0.08)_0%,transparent_50%)] pointer-events-none" />
+      <section className="relative w-full min-h-[94vh] lg:min-h-screen bg-[#000000] flex flex-col justify-between items-center overflow-hidden border-b border-luxury-champagne/15 select-none">
+        {/* Layer 1: Base Museum Gallery Backdrop Plate (Cleaned, 1080p, No baked-in text) */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/hero/gallery-stage-hd.webp"
+            alt="AUCTIONLY Fine Art & Antiquities Museum Gallery"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center transform scale-100 transition-transform duration-1000 ease-out"
+          />
+        </div>
 
-        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-          {/* Left Column: Brand & Tagline Messaging */}
-          <div className="lg:col-span-6 flex flex-col gap-6 text-left">
-            <div className="inline-flex items-center gap-2.5 px-3 py-1 bg-luxury-dark/90 border border-luxury-champagne/20 w-fit">
-              <MonogramA size={18} glow />
-              <span className="text-[10px] tracking-[0.25em] uppercase text-luxury-champagne font-medium">
-                The Premier Digital Auction House
+        {/* Layer 2: Atmospheric Lighting & Volumetric Rays (Entering from top-right across bust) */}
+        <div className="absolute inset-0 z-10 pointer-events-none bg-[linear-gradient(225deg,rgba(255,225,160,0.18)_0%,rgba(212,175,55,0.06)_28%,transparent_60%)] mix-blend-screen" />
+        <div className="absolute inset-0 z-10 pointer-events-none bg-[radial-gradient(circle_at_50%_42%,rgba(212,175,55,0.12)_0%,transparent_50%)]" />
+
+        {/* Layer 3: Edge Vignettes (Fading smoothly into pure #000000 background) */}
+        <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#000000] via-[#000000]/70 to-transparent pointer-events-none z-10" />
+        <div className="absolute bottom-0 inset-x-0 h-36 bg-gradient-to-t from-[#000000] via-[#000000]/80 to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-y-0 left-0 w-20 sm:w-32 bg-gradient-to-r from-[#000000] to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-y-0 right-0 w-20 sm:w-32 bg-gradient-to-l from-[#000000] to-transparent pointer-events-none z-10" />
+
+        {/* Top Content: Main Headline & Tagline */}
+        <div className="relative z-20 text-center pt-8 sm:pt-10 lg:pt-12 px-4 w-full max-w-5xl mx-auto flex flex-col items-center">
+          <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-[6.5rem] tracking-[0.24em] sm:tracking-[0.28em] text-[#F7F3EB] uppercase font-normal leading-none drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
+            AUCTIONLY
+          </h1>
+          <div className="mt-3 sm:mt-4 flex items-center justify-center gap-3 sm:gap-6 w-full max-w-md sm:max-w-lg">
+            <span className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-luxury-gold/70" />
+            <span className="font-serif text-[11px] sm:text-xs md:text-sm tracking-[0.35em] sm:tracking-[0.42em] uppercase text-luxury-champagne/95 whitespace-nowrap font-light drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
+              A Curated Auction House
+            </span>
+            <span className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-luxury-gold/70" />
+          </div>
+        </div>
+
+        {/* Center: Interactive Call-To-Action Buttons (Positioned directly beneath the bust/plinth) */}
+        <div className="relative z-20 flex flex-wrap items-center justify-center gap-4 sm:gap-6 px-4 my-auto pt-44 sm:pt-60 md:pt-72 lg:pt-80">
+          <Link
+            href="/catalogue"
+            className="group px-6 sm:px-8 py-3 sm:py-3.5 bg-[#C6A66A] hover:bg-[#D4AF37] text-[#0A0907] font-semibold text-xs sm:text-sm tracking-[0.2em] uppercase transition-all duration-300 shadow-[0_8px_25px_rgba(198,166,106,0.35)] hover:shadow-[0_12px_32px_rgba(198,166,106,0.5)] flex items-center gap-2.5 active:scale-[0.98]"
+          >
+            <Gavel size={15} className="text-[#0A0907]" />
+            <span>Explore Lots</span>
+            <ArrowRight size={14} className="text-[#0A0907] transition-transform duration-300 group-hover:translate-x-1" />
+          </Link>
+
+          <Link
+            href="/live"
+            className="group px-6 sm:px-8 py-3 sm:py-3.5 bg-black/70 hover:bg-black/90 border border-luxury-gold/70 hover:border-luxury-gold text-luxury-champagne hover:text-luxury-ivory font-medium text-xs sm:text-sm tracking-[0.2em] uppercase transition-all duration-300 backdrop-blur-md flex items-center gap-2.5 active:scale-[0.98]"
+          >
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <span>Live Auctions</span>
+            <ArrowRight size={14} className="text-luxury-gold transition-transform duration-300 group-hover:translate-x-1" />
+          </Link>
+        </div>
+
+        {/* Bottom Content: Trust Indicators & Scroll Indicator */}
+        <div className="relative z-20 w-full max-w-6xl mx-auto px-4 pb-6 sm:pb-8 flex flex-col items-center gap-5 sm:gap-6">
+          {/* Trust Indicators Row with Thin Vertical Dividers */}
+          <div className="w-full grid grid-cols-2 lg:grid-cols-4 items-center justify-center divide-y lg:divide-y-0 lg:divide-x divide-luxury-gold/25 py-3 border-y border-luxury-gold/25 bg-black/40 backdrop-blur-[2px]">
+            <div className="flex items-center justify-center gap-2.5 py-2.5 sm:py-2 px-3 text-center">
+              <ShieldCheck size={16} className="text-luxury-gold shrink-0" />
+              <span className="text-[10px] sm:text-[11px] md:text-xs tracking-[0.18em] uppercase text-luxury-ivory/90 font-medium">
+                Verified Provenance
               </span>
             </div>
-
-            <div className="flex flex-col gap-2">
-              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold text-luxury-ivory tracking-tight leading-[1.15]">
-                Own the <br />
-                <span className="text-gold-gradient italic font-normal">Extraordinary.</span>
-              </h1>
-              <p className="text-sm sm:text-base text-luxury-champagne/80 font-sans leading-relaxed max-w-xl mt-3">
-                Curating rare masterpieces, royal antiquities, vintage horology, and museum-grade collectibles.
-                Authoritative server-side bidding in Indian Rupees (₹) with guaranteed provenance.
-              </p>
+            <div className="flex items-center justify-center gap-2.5 py-2.5 sm:py-2 px-3 text-center">
+              <Gem size={16} className="text-luxury-gold shrink-0" />
+              <span className="text-[10px] sm:text-[11px] md:text-xs tracking-[0.18em] uppercase text-luxury-ivory/90 font-medium">
+                Curated Collections
+              </span>
             </div>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-4">
-              <Link
-                href="/auctions"
-                className="px-6 py-3.5 bg-luxury-gold hover:bg-luxury-goldLight text-luxury-black font-semibold uppercase tracking-luxury text-xs transition-all duration-300 shadow-[0_10px_25px_rgba(198,166,106,0.3)] flex items-center gap-2"
-              >
-                <Gavel size={16} />
-                <span>Explore Live Bidding</span>
-              </Link>
-
-              <Link
-                href="/catalogue"
-                className="px-6 py-3.5 bg-luxury-dark hover:bg-luxury-elevated text-luxury-ivory border border-luxury-champagne/30 uppercase tracking-luxury text-xs transition-all duration-300 flex items-center gap-2"
-              >
-                <span>Curated Catalogue</span>
-                <ArrowRight size={14} className="text-luxury-gold" />
-              </Link>
+            <div className="flex items-center justify-center gap-2.5 py-2.5 sm:py-2 px-3 text-center">
+              <Landmark size={16} className="text-luxury-gold shrink-0" />
+              <span className="text-[10px] sm:text-[11px] md:text-xs tracking-[0.18em] uppercase text-luxury-ivory/90 font-medium">
+                Specialist Departments
+              </span>
             </div>
-
-            {/* Platform Architecture & Curatorial Scope Indicators */}
-            <div className="grid grid-cols-3 gap-6 pt-6 border-t border-luxury-subtle/40 mt-4 text-luxury-champagne/90">
-              <div>
-                <span className="block font-serif text-2xl font-semibold text-luxury-ivory">7</span>
-                <span className="text-[10px] uppercase tracking-luxury text-luxury-muted">Specialist Departments</span>
-              </div>
-              <div>
-                <span className="block font-serif text-2xl font-semibold text-luxury-ivory">INR (₹)</span>
-                <span className="text-[10px] uppercase tracking-luxury text-luxury-muted">Authoritative Settlement</span>
-              </div>
-              <div>
-                <span className="block font-serif text-2xl font-semibold text-luxury-gold">Anti-Snip</span>
-                <span className="text-[10px] uppercase tracking-luxury text-luxury-muted">Dynamic Soft Close</span>
-              </div>
+            <div className="flex items-center justify-center gap-2.5 py-2.5 sm:py-2 px-3 text-center">
+              <Globe size={16} className="text-luxury-gold shrink-0" />
+              <span className="text-[10px] sm:text-[11px] md:text-xs tracking-[0.18em] uppercase text-luxury-ivory/90 font-medium">
+                India&apos;s Private Auction House®
+              </span>
             </div>
-            <p className="text-[10px] text-luxury-muted/70 italic">
-              * Private Beta Demonstration: All catalogued lots and currency valuations shown for illustrative purposes.
-            </p>
           </div>
 
-          {/* Right Column: 3D Interactive Stage */}
-          <div className="lg:col-span-6 w-full">
-            <HeroScene3D />
+          {/* Scroll to Discover */}
+          <div className="flex flex-col items-center gap-1.5 pt-1">
+            <span className="text-[9px] sm:text-[10px] tracking-[0.3em] uppercase text-luxury-champagne/75 font-light">
+              Scroll to Discover
+            </span>
+            <div className="w-[1px] h-8 sm:h-10 bg-gradient-to-b from-luxury-gold via-luxury-gold/50 to-transparent animate-pulse" />
           </div>
         </div>
       </section>
