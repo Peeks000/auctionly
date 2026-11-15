@@ -4,6 +4,8 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AiConcierge from "@/components/ai/AiConcierge";
 import GlobalErrorBoundary from "@/components/layout/GlobalErrorBoundary";
+import CustomCursor from "@/components/ui/CustomCursor";
+import AtmosphereSoundController from "@/components/audio/AtmosphereSoundController";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -40,8 +42,10 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-luxury-black text-luxury-ivory flex flex-col selection:bg-luxury-gold selection:text-luxury-black">
         <GlobalErrorBoundary>
+          <CustomCursor />
           <Header />
           <main className="flex-1 w-full">{children}</main>
+          <AtmosphereSoundController />
           <AiConcierge />
           <Footer />
         </GlobalErrorBoundary>

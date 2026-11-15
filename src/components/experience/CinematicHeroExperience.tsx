@@ -16,6 +16,7 @@ import {
   VolumeX,
   Sparkles,
 } from "lucide-react";
+import AtmosphereAudioManager from "@/lib/audioManager";
 
 // Register GSAP plugins safely on client
 if (typeof window !== "undefined") {
@@ -103,7 +104,20 @@ export const CinematicHeroExperience: React.FC = () => {
   const chapterDomRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(-1);
   const activeChapterRef = useRef<number>(-1);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  useEffect(() => {
+    const manager = AtmosphereAudioManager.getInstance();
+    const unsub = manager.subscribe((playing) => {
+      setIsPlayingAudio(playing);
+    });
+    return unsub;
+  }, []);
+
+  const handleToggleSound = () => {
+    const manager = AtmosphereAudioManager.getInstance();
+    manager.toggle();
+  };
 
   // Pointer & mouse tracking with window-level detection
   useEffect(() => {
@@ -762,13 +776,13 @@ export const CinematicHeroExperience: React.FC = () => {
         {/* ====================================================================
             LAYER 4: Exhibition Persistent Controls (Bottom bar)
            ==================================================================== */}
+        {/* Left / Center: Chapter Quick Jump Pills (Visible on scroll) */}
         <div
-          className={`absolute bottom-6 inset-x-0 px-6 sm:px-12 flex items-center justify-between z-40 pointer-events-none transition-opacity duration-500 ${
+          className={`absolute bottom-6 left-6 sm:left-12 flex items-center z-40 pointer-events-none transition-opacity duration-500 ${
             activeChapterIndex >= 0 ? "opacity-100" : "opacity-0"
           }`}
         >
-          {/* Chapter Quick Jump Pills */}
-          <div className="flex items-center gap-2 pointer-events-auto bg-black/50 border border-luxury-gold/20 px-3 py-1.5 rounded-full backdrop-blur-md">
+          <div className="flex items-center gap-2 pointer-events-auto bg-black/60 border border-luxury-gold/30 px-3 py-1.5 rounded-full backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
             {CHAPTERS.map((chap, idx) => (
               <button
                 key={chap.id}
@@ -784,17 +798,53 @@ export const CinematicHeroExperience: React.FC = () => {
               </button>
             ))}
           </div>
+        </div>
 
-          {/* Sound / Atmosphere Indicator */}
+        {/* Right: Sound / Atmosphere Controller (ALWAYS Visible on Bottom Right) */}
+        <div className="absolute bottom-6 right-6 sm:right-12 z-40 pointer-events-auto">
           <button
-            onClick={() => setIsMuted(!isMuted)}
-            className="flex items-center gap-2 pointer-events-auto px-3 py-1.5 rounded-full bg-black/50 border border-luxury-gold/20 text-luxury-champagne/80 hover:text-luxury-gold hover:border-luxury-gold/40 transition-colors backdrop-blur-md text-[10px] tracking-wider uppercase"
-            aria-label={isMuted ? "Unmute gallery atmosphere" : "Mute gallery atmosphere"}
+            onClick={handleToggleSound}
+            data-cursor="SOUND"
+            className={`flex items-center gap-2.5 px-3.5 py-1.5 rounded-full backdrop-blur-md border transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.8)] ${
+              isPlayingAudio
+                ? "bg-black/80 border-luxury-gold text-luxury-gold shadow-[0_0_15px_rgba(212,175,55,0.35)]"
+                : "bg-black/60 border-luxury-gold/30 text-luxury-champagne/80 hover:text-luxury-gold hover:border-luxury-gold/60"
+            }`}
+            aria-label={isPlayingAudio ? "Mute gallery atmosphere" : "Play gallery atmosphere"}
           >
-            {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
-            <span className="hidden sm:inline">
-              {isMuted ? "Atmosphere Muted" : "Atmosphere Playing"}
+            {/* Dynamic Equalizer Wave Bars */}
+            <div className="flex items-end gap-[2.5px] h-3 w-3.5 shrink-0">
+              <span
+                className={`w-[2px] bg-luxury-gold rounded-full transition-all ${
+                  isPlayingAudio ? "animate-[soundWave1_0.8s_ease-in-out_infinite] h-full" : "h-[3px] opacity-40"
+                }`}
+              />
+              <span
+                className={`w-[2px] bg-luxury-gold rounded-full transition-all ${
+                  isPlayingAudio ? "animate-[soundWave2_0.6s_ease-in-out_infinite_0.15s] h-full" : "h-[5px] opacity-40"
+                }`}
+              />
+              <span
+                className={`w-[2px] bg-luxury-gold rounded-full transition-all ${
+                  isPlayingAudio ? "animate-[soundWave3_0.9s_ease-in-out_infinite_0.3s] h-full" : "h-[3px] opacity-40"
+                }`}
+              />
+              <span
+                className={`w-[2px] bg-luxury-gold rounded-full transition-all ${
+                  isPlayingAudio ? "animate-[soundWave4_0.7s_ease-in-out_infinite_0.2s] h-full" : "h-[4px] opacity-40"
+                }`}
+              />
+            </div>
+
+            <span className="text-[10px] tracking-[0.18em] uppercase font-medium">
+              {isPlayingAudio ? "Atmosphere Playing" : "Atmosphere Muted"}
             </span>
+
+            {isPlayingAudio ? (
+              <Volume2 size={13} className="text-luxury-gold" />
+            ) : (
+              <VolumeX size={13} className="text-luxury-champagne/60" />
+            )}
           </button>
         </div>
       </div>

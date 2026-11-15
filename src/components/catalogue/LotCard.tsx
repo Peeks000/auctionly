@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatINR } from "@/lib/currency";
@@ -13,12 +13,35 @@ interface LotCardProps {
 }
 
 export const LotCard: React.FC<LotCardProps> = ({ listing, priority = false }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
   const [bookmarked, setBookmarked] = useState(false);
   const [timeLeft, setTimeLeft] = useState<string>("");
+  const [tilt, setTilt] = useState({ rotX: 0, rotY: 0, glareX: 50, glareY: 50, isHovered: false });
 
   const auction = listing.auction;
   const isAuctionActive = auction?.status === "active" || auction?.status === "extended";
   const isLive = auction?.is_live;
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const rotX = -((y - centerY) / centerY) * 6;
+    const rotY = ((x - centerX) / centerX) * 6;
+    const glareX = (x / rect.width) * 100;
+    const glareY = (y / rect.height) * 100;
+
+    setTilt({ rotX, rotY, glareX, glareY, isHovered: true });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ rotX: 0, rotY: 0, glareX: 50, glareY: 50, isHovered: false });
+  };
 
   useEffect(() => {
     try {
@@ -86,9 +109,33 @@ export const LotCard: React.FC<LotCardProps> = ({ listing, priority = false }) =
   }, [auction?.end_time]);
 
   return (
-    <div className="card-luxury card-luxury-hover flex flex-col justify-between h-full group overflow-hidden">
-      <div>
-        {/* Image Container with Badges */}
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      data-cursor="VIEW LOT"
+      className="relative perspective-1000 h-full"
+    >
+      <div
+        className="card-luxury flex flex-col justify-between h-full group overflow-hidden transition-all duration-300 ease-out will-change-transform relative"
+        style={{
+          transform: tilt.isHovered
+            ? `perspective(1000px) rotateX(${tilt.rotX.toFixed(2)}deg) rotateY(${tilt.rotY.toFixed(2)}deg) scale3d(1.02, 1.02, 1.02)`
+            : "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)",
+          transition: tilt.isHovered ? "transform 0.08s ease-out" : "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        {/* Dynamic Specular 3D Glare Highlight */}
+        <div
+          className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-300"
+          style={{
+            opacity: tilt.isHovered ? 1 : 0,
+            background: `radial-gradient(circle 320px at ${tilt.glareX.toFixed(1)}% ${tilt.glareY.toFixed(1)}%, rgba(212, 175, 55, 0.16) 0%, rgba(212, 175, 55, 0.04) 45%, transparent 75%)`,
+          }}
+        />
+
+        <div>
+          {/* Image Container with Badges */}
         <div className="relative w-full h-72 bg-luxury-dark/90 overflow-hidden">
           <Link href={`/lot/${listing.slug}`} tabIndex={-1}>
             <Image
@@ -206,6 +253,7 @@ export const LotCard: React.FC<LotCardProps> = ({ listing, priority = false }) =
         </div>
       </div>
     </div>
+  </div>
   );
 };
 

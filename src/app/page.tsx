@@ -5,6 +5,7 @@ import LotCard from "@/components/catalogue/LotCard";
 import MonogramA from "@/components/brand/MonogramA";
 import CinematicHeroExperience from "@/components/experience/CinematicHeroExperience";
 import DepartmentsCarousel3D from "@/components/departments/DepartmentsCarousel3D";
+import ScrollTriggerEnhancer from "@/components/experience/ScrollTriggerEnhancer";
 import { mockListings } from "@/lib/data/mockCatalogue";
 import {
   Gavel,
@@ -30,6 +31,8 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col pb-20 bg-[#000000]">
+      <ScrollTriggerEnhancer />
+
       {/* ====================================================================
           UNIFIED CONTINUOUS EXPERIENCE: HERO + CINEMATIC CURATORIAL JOURNEY
           (Zero duplication: Hero image acts as Frame 0, zooming into sculpture
@@ -41,7 +44,7 @@ export default function HomePage() {
           SECTION 2: FEATURED TIMED AUCTIONS (AUTHORITATIVE ENGINE)
          ==================================================================== */}
       <section id="featured-auctions" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full scroll-mt-24 mt-24 sm:mt-28">
-        <div className="flex flex-col md:flex-row items-baseline justify-between mb-10 pb-4 border-b border-luxury-champagne/15 gap-4">
+        <div className="scroll-header-reveal flex flex-col md:flex-row items-baseline justify-between mb-10 pb-4 border-b border-luxury-champagne/15 gap-4">
           <div>
             <div className="flex items-center gap-2 text-luxury-gold text-xs uppercase tracking-luxury mb-1">
               <Sparkles size={14} />
@@ -71,7 +74,7 @@ export default function HomePage() {
           SECTION 3: LIVE GALA ROOM PREVIEW
          ==================================================================== */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-24 sm:mt-28">
-        <div className="relative rounded-sm bg-gradient-to-r from-luxury-dark via-luxury-charcoal to-luxury-dark border border-luxury-gold/40 p-8 sm:p-12 overflow-hidden shadow-2xl">
+        <div className="gala-banner-reveal relative rounded-sm bg-gradient-to-r from-luxury-dark via-luxury-charcoal to-luxury-dark border border-luxury-gold/40 p-8 sm:p-12 overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-luxury-gold/5 rounded-full blur-3xl pointer-events-none" />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
@@ -137,8 +140,8 @@ export default function HomePage() {
       {/* ====================================================================
           SECTION 5: BUY NOW & EXCEPTIONAL OBJECTS (DUAL-SALE SAFE)
          ==================================================================== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-24 sm:mt-28">
-        <div className="flex flex-col md:flex-row items-baseline justify-between mb-10 pb-4 border-b border-luxury-champagne/15 gap-4">
+      <section id="buy-now-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-24 sm:mt-28">
+        <div className="scroll-header-reveal flex flex-col md:flex-row items-baseline justify-between mb-10 pb-4 border-b border-luxury-champagne/15 gap-4">
           <div>
             <div className="flex items-center gap-2 text-luxury-gold text-xs uppercase tracking-luxury mb-1">
               <Lock size={14} />
@@ -164,7 +167,7 @@ export default function HomePage() {
           SECTION 6: CONSIGNMENT STUDIO & SELLER HIGHLIGHTS
          ==================================================================== */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-24 sm:mt-28">
-        <div className="bg-luxury-dark/90 border border-luxury-champagne/20 rounded-sm p-8 sm:p-14 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div className="consignment-studio-reveal bg-luxury-dark/90 border border-luxury-champagne/20 rounded-sm p-8 sm:p-14 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-8 flex flex-col gap-4">
             <span className="text-xs uppercase tracking-luxury text-luxury-gold font-medium">
               Seller Consignment Studio
