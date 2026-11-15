@@ -85,6 +85,9 @@ export const CinematicHeroExperience: React.FC = () => {
 
   // Hero interactive layers
   const heroBackdropRef = useRef<HTMLDivElement>(null);
+  const revealLayerRef = useRef<HTMLDivElement>(null);
+  const targetPos = useRef({ x: -1000, y: -1000 });
+  const targetOpacity = useRef(0);
   const heroUiRef = useRef<HTMLDivElement>(null);
   const heroTitleRef = useRef<HTMLDivElement>(null);
   const heroCtaRef = useRef<HTMLDivElement>(null);
@@ -100,6 +103,87 @@ export const CinematicHeroExperience: React.FC = () => {
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(-1);
   const activeChapterRef = useRef<number>(-1);
   const [isMuted, setIsMuted] = useState(true);
+
+  // Pointer & mouse tracking with window-level detection
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onMove = (e: MouseEvent | PointerEvent) => {
+      if ("pointerType" in e && e.pointerType === "touch") return;
+      const stage = stageRef.current;
+      if (!stage) return;
+      const rect = stage.getBoundingClientRect();
+
+      if (
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom
+      ) {
+        targetPos.current = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        };
+        targetOpacity.current = 1;
+        // Immediate first jump if starting from off-screen
+        if (revealLayerRef.current && targetOpacity.current === 1) {
+          revealLayerRef.current.style.opacity = "1";
+        }
+      } else {
+        targetOpacity.current = 0;
+      }
+    };
+
+    const onLeave = () => {
+      targetOpacity.current = 0;
+    };
+
+    window.addEventListener("mousemove", onMove, { passive: true });
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("mouseleave", onLeave, { passive: true });
+    window.addEventListener("blur", onLeave, { passive: true });
+
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("pointermove", onMove);
+      document.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("blur", onLeave);
+    };
+  }, []);
+
+  // Cursor-following spotlight RAF lerp loop (60-120fps smooth easing)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let animId: number;
+    let currentX = -1000;
+    let currentY = -1000;
+    let currentOpacity = 0;
+
+    const render = () => {
+      // Smooth lerp easing towards cursor position
+      currentX += (targetPos.current.x - currentX) * 0.15;
+      currentY += (targetPos.current.y - currentY) * 0.15;
+      currentOpacity += (targetOpacity.current - currentOpacity) * 0.12;
+
+      const layer = revealLayerRef.current;
+      if (layer) {
+        if (currentOpacity < 0.005) {
+          layer.style.opacity = "0";
+        } else {
+          layer.style.opacity = currentOpacity.toFixed(3);
+          const mask = `radial-gradient(circle 260px at ${currentX.toFixed(1)}px ${currentY.toFixed(1)}px, black 0%, black 140px, rgba(0, 0, 0, 0.45) 210px, transparent 260px)`;
+          layer.style.webkitMaskImage = mask;
+          layer.style.maskImage = mask;
+        }
+      }
+
+      animId = requestAnimationFrame(render);
+    };
+
+    animId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animId);
+  }, []);
 
   // Draw frame on canvas with nearest neighbor fallback for 0ms lag
   const drawFrame = useCallback((index: number) => {
@@ -231,9 +315,17 @@ export const CinematicHeroExperience: React.FC = () => {
         backdrop.style.opacity = backdropOpacity.toFixed(3);
         backdrop.style.transform = `scale(${scale.toFixed(4)})`;
         backdrop.style.display = "block";
+
+        if (revealLayerRef.current) {
+          revealLayerRef.current.style.transform = `scale(${scale.toFixed(4)})`;
+          revealLayerRef.current.style.display = "block";
+        }
       } else {
         backdrop.style.opacity = "0";
         backdrop.style.display = "none";
+        if (revealLayerRef.current) {
+          revealLayerRef.current.style.display = "none";
+        }
       }
     }
   }, []);
@@ -403,10 +495,10 @@ export const CinematicHeroExperience: React.FC = () => {
             transformOrigin: "50.5% 38%",
           }}
         >
-          {/* Exact Museum Gallery Backdrop Asset */}
+          {/* Exact Museum Gallery Base Asset (BG_IMAGEs_1) */}
           <div className="absolute inset-0 z-0">
             <Image
-              src="/images/auctionly-hero-gallery-hd.png"
+              src="/hero/hero-base.jpg"
               alt="AUCTIONLY Classical Museum Gallery with Greco-Roman Bust"
               fill
               priority
@@ -421,6 +513,50 @@ export const CinematicHeroExperience: React.FC = () => {
           <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_50%_40%,rgba(212,175,55,0.08)_0%,transparent_50%)]" />
 
           {/* Edge Vignettes for Gallery Ambience */}
+          <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#000000]/80 via-[#000000]/40 to-transparent" />
+          <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#000000]/85 via-[#000000]/45 to-transparent" />
+          <div className="absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-[#000000]/60 to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-[#000000]/60 to-transparent" />
+        </div>
+
+        {/* ====================================================================
+            LAYER 1.5: Cursor-Following Spotlight Character Reveal Layer (BG_IMAGEs_2)
+            - 260px circular spotlight centered exactly on cursor
+            - Soft feathered edge via CSS radial-gradient mask-image
+            - Smooth lerp/easing cursor-follow
+            - pointer-events: none, above base hero (z-12) but below UI (z-30)
+            - Completely hidden outside spotlight and when cursor leaves hero
+           ==================================================================== */}
+        <div
+          ref={revealLayerRef}
+          className="absolute inset-0 z-[12] pointer-events-none overflow-hidden"
+          style={{
+            transformOrigin: "50.5% 38%",
+            opacity: 0,
+            WebkitMaskImage:
+              "radial-gradient(circle 260px at -1000px -1000px, black 0%, black 140px, rgba(0, 0, 0, 0.45) 210px, transparent 260px)",
+            maskImage:
+              "radial-gradient(circle 260px at -1000px -1000px, black 0%, black 140px, rgba(0, 0, 0, 0.45) 210px, transparent 260px)",
+          }}
+        >
+          {/* Exact Character Reveal Asset (BG_IMAGEs_2) - No editing, no crop, no resize */}
+          <div className="absolute inset-0 z-0">
+            <Image
+              src="/hero/hero-reveal.jpg"
+              alt="AUCTIONLY Illuminated Character Gallery Reveal"
+              fill
+              priority
+              sizes="100vw"
+              quality={95}
+              className="object-cover object-center"
+            />
+          </div>
+
+          {/* Atmospheric Lighting matching base */}
+          <div className="absolute inset-0 z-10 bg-[linear-gradient(225deg,rgba(255,225,160,0.14)_0%,rgba(212,175,55,0.05)_26%,transparent_60%)] mix-blend-screen" />
+          <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_50%_40%,rgba(212,175,55,0.08)_0%,transparent_50%)]" />
+
+          {/* Matching Edge Vignettes */}
           <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#000000]/80 via-[#000000]/40 to-transparent" />
           <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#000000]/85 via-[#000000]/45 to-transparent" />
           <div className="absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-[#000000]/60 to-transparent" />
