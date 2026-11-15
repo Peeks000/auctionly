@@ -8,6 +8,8 @@ import { Volume2, VolumeX } from "lucide-react";
 // Ensure ScrollTrigger is registered safely on client
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
+  (window as any).gsap = gsap;
+  (window as any).ScrollTrigger = ScrollTrigger;
 }
 
 // Video start offset: skip the marble bust shot (0.0s - 1.35s) so the experience opens with Chapter 02
@@ -88,12 +90,13 @@ export const CinematicScrollExperience: React.FC = () => {
   // Video seeking pipeline state (kept in refs for high frequency execution)
   const isSeekingRef = useRef<boolean>(false);
   const targetTimeRef = useRef<number>(START_OFFSET);
+  const pendingTargetRef = useRef<number | null>(null);
   const animFrameIdRef = useRef<number | null>(null);
   const actualDurationRef = useRef<number>(10.027);
 
   // Check reduced motion preference
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && window.matchMedia) {
       const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       setIsReducedMotion(prefersReduced);
     }
@@ -106,7 +109,8 @@ export const CinematicScrollExperience: React.FC = () => {
     if (!video || video.readyState < 1) return;
 
     if (isSeekingRef.current) {
-      // Browser is currently decoding a requested frame; wait for 'seeked' event
+      // Browser is currently decoding; queue this target for next cycle
+      pendingTargetRef.current = targetTimeRef.current;
       return;
     }
 
@@ -134,22 +138,25 @@ export const CinematicScrollExperience: React.FC = () => {
     [executeSeek]
   );
 
-  // Handle Seeked event to drain queued target times immediately
+  // Handle Seeked event to drain queued target times without infinite revert loops
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleSeeked = () => {
       isSeekingRef.current = false;
-      const target = targetTimeRef.current;
-      const diff = Math.abs(video.currentTime - target);
-      if (diff > 0.02) {
-        // Target moved while decoding previous seek; execute next immediately
-        isSeekingRef.current = true;
-        try {
-          video.currentTime = target;
-        } catch {
-          isSeekingRef.current = false;
+      if (pendingTargetRef.current !== null) {
+        const nextTarget = pendingTargetRef.current;
+        pendingTargetRef.current = null;
+        targetTimeRef.current = nextTarget;
+        const diff = Math.abs(video.currentTime - nextTarget);
+        if (diff > 0.02) {
+          isSeekingRef.current = true;
+          try {
+            video.currentTime = nextTarget;
+          } catch {
+            isSeekingRef.current = false;
+          }
         }
       }
     };
@@ -245,16 +252,22 @@ export const CinematicScrollExperience: React.FC = () => {
     const scrubDuration = duration - START_OFFSET;
     const target = Math.min(Math.max(START_OFFSET + initialProgress * scrubDuration, START_OFFSET), duration - 0.02);
     targetTimeRef.current = target;
-    video.currentTime = target;
+    try {
+      video.currentTime = target;
+    } catch {
+      // safe seek fallback
+    }
 
     updateChapterVisuals(initialProgress);
-    ScrollTrigger.refresh();
+    try {
+      ScrollTrigger.refresh();
+    } catch {
+      // safe refresh fallback
+    }
   };
 
   // GSAP ScrollTrigger configuration using Pure CSS Sticky (NO GSAP pin or pinSpacing)
   useEffect(() => {
-    if (isReducedMotion) return;
-
     const container = containerRef.current;
     const video = videoRef.current;
     if (!container || !video) return;
@@ -284,7 +297,7 @@ export const CinematicScrollExperience: React.FC = () => {
     return () => {
       ctx.revert();
     };
-  }, [isReducedMotion, scheduleSeek, updateChapterVisuals]);
+  }, [scheduleSeek, updateChapterVisuals]);
 
   // Chapter navigation: scrolls smoothly to the chapter's position in the track
   const scrollToChapter = (chapter: ChapterConfig) => {
@@ -314,11 +327,7 @@ export const CinematicScrollExperience: React.FC = () => {
     <section
       ref={containerRef}
       id="cinematic-experience"
-      className="relative w-full bg-[#000000] text-luxury-ivory overflow-visible"
-      style={{
-        // Dedicated scroll track: 380vh on desktop, 280vh on mobile
-        height: isReducedMotion ? "100svh" : "380vh",
-      }}
+      className="relative w-full bg-[#000000] text-luxury-ivory overflow-visible h-[280vh] md:h-[380vh]"
     >
       {/* Pinned Stage: Managed purely via CSS sticky (NO GSAP pin-spacer conflict) */}
       <div
@@ -333,9 +342,10 @@ export const CinematicScrollExperience: React.FC = () => {
             muted={isMuted}
             playsInline
             preload="auto"
-            loop={isReducedMotion}
-            autoPlay={isReducedMotion}
+            loop={false}
+            autoPlay={false}
             onLoadedMetadata={handleLoadedMetadata}
+            onError={(e) => console.warn("AUCTIONLY Cinematic Video Notice:", e)}
             className="w-full h-full object-cover object-center pointer-events-none select-none transition-opacity duration-700"
             style={{
               opacity: isVideoLoaded ? 1 : 0.5,
@@ -355,14 +365,14 @@ export const CinematicScrollExperience: React.FC = () => {
         <div className="absolute inset-0 pointer-events-none z-10 bg-[linear-gradient(135deg,rgba(198,166,106,0.06)_0%,transparent_50%,rgba(212,175,55,0.04)_100%)] mix-blend-screen" />
 
         {/* Layer 3: Synchronized Chapter Text Overlays (Chapters 02, 03, 04) */}
-        <div className="relative z-20 w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 h-full flex flex-col justify-center pointer-events-none">
+        <div className="relative z-20 w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 h-full pointer-events-none">
           {CHAPTERS.map((chapter, idx) => (
             <div
               key={chapter.id}
               ref={(el) => {
                 chapterDomRefs.current[idx] = el;
               }}
-              className={`transition-all duration-200 ease-out flex flex-col ${
+              className={`absolute inset-x-6 sm:inset-x-10 lg:inset-x-16 top-1/2 -translate-y-1/2 transition-all duration-200 ease-out flex flex-col ${
                 chapter.alignment === "left"
                   ? "items-start text-left max-w-2xl"
                   : chapter.alignment === "center"
@@ -370,9 +380,9 @@ export const CinematicScrollExperience: React.FC = () => {
                   : "items-end text-right ml-auto max-w-2xl"
               }`}
               style={{
-                opacity: isReducedMotion ? 1 : 0,
-                transform: isReducedMotion ? "none" : "translate3d(0, 30px, 0)",
-                filter: isReducedMotion ? "none" : "blur(8px)",
+                opacity: 0,
+                transform: "translate3d(0, 30px, 0)",
+                filter: "blur(8px)",
               }}
             >
               {/* Chapter Label */}
