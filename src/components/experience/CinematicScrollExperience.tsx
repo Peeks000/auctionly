@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX, Sparkles } from "lucide-react";
 
 // Ensure ScrollTrigger is registered safely on client
 if (typeof window !== "undefined") {
@@ -12,8 +12,10 @@ if (typeof window !== "undefined") {
   (window as any).ScrollTrigger = ScrollTrigger;
 }
 
-// Video start offset: skip the marble bust shot (0.0s - 1.35s) so the experience opens with Chapter 02
-const START_OFFSET = 1.38;
+// Total lightweight WebP frames extracted for the cinematic exhibition
+const TOTAL_FRAMES = 180;
+const getFramePath = (index: number) =>
+  `/frames/frame_${String(index).padStart(3, "0")}.webp`;
 
 interface ChapterConfig {
   id: string;
@@ -22,8 +24,6 @@ interface ChapterConfig {
   headlineLine1: string;
   headlineLine2?: string;
   supporting: string;
-  timeStart: number; // in seconds of the MP4
-  timeEnd: number;
   progressStart: number; // normalized progress within the cinematic scroll track (0.0 - 1.0)
   progressEnd: number;
   alignment: "left" | "center" | "right";
@@ -39,8 +39,6 @@ const CHAPTERS: ChapterConfig[] = [
     headlineLine1: "BEYOND ORDINARY",
     headlineLine2: "COLLECTIONS.",
     supporting: "A world of exceptional works, rare antiquities and remarkable craftsmanship.",
-    timeStart: 1.38,
-    timeEnd: 3.5,
     progressStart: 0.05,
     progressEnd: 0.32,
     alignment: "center",
@@ -52,8 +50,6 @@ const CHAPTERS: ChapterConfig[] = [
     headlineLine1: "THE ART OF THE",
     headlineLine2: "EXCEPTIONAL.",
     supporting: "Discover objects whose craftsmanship, history and rarity transcend generations.",
-    timeStart: 3.5,
-    timeEnd: 6.6,
     progressStart: 0.38,
     progressEnd: 0.68,
     alignment: "left",
@@ -65,8 +61,6 @@ const CHAPTERS: ChapterConfig[] = [
     headlineLine1: "EVERY EXTRAORDINARY",
     headlineLine2: "OBJECT HAS A STORY.",
     supporting: "Discover the provenance, artistry and history behind exceptional pieces.",
-    timeStart: 6.6,
-    timeEnd: 10.02,
     progressStart: 0.74,
     progressEnd: 0.95,
     alignment: "right",
@@ -76,23 +70,20 @@ const CHAPTERS: ChapterConfig[] = [
 export const CinematicScrollExperience: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Progressive Frame Image Cache
+  const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(TOTAL_FRAMES).fill(null));
+  const lastDrawnIndexRef = useRef<number>(-1);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Chapter DOM refs for high-performance direct styling without React re-render storms
   const chapterDomRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(0);
   const activeChapterRef = useRef<number>(0);
   const [isMuted, setIsMuted] = useState(true);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
-
-  // Video seeking pipeline state (kept in refs for high frequency execution)
-  const isSeekingRef = useRef<boolean>(false);
-  const targetTimeRef = useRef<number>(START_OFFSET);
-  const pendingTargetRef = useRef<number | null>(null);
-  const animFrameIdRef = useRef<number | null>(null);
-  const actualDurationRef = useRef<number>(10.027);
 
   // Check reduced motion preference
   useEffect(() => {
@@ -102,78 +93,43 @@ export const CinematicScrollExperience: React.FC = () => {
     }
   }, []);
 
-  // Precision Seek Engine: Non-blocking, requestAnimationFrame-scheduled seeking
-  const executeSeek = useCallback(() => {
-    animFrameIdRef.current = null;
-    const video = videoRef.current;
-    if (!video || video.readyState < 1) return;
+  // Precision Canvas Frame Renderer: 0ms Seek Lag, 60-120fps Synchronous Paint
+  const drawFrame = useCallback((index: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    if (isSeekingRef.current) {
-      // Browser is currently decoding; queue this target for next cycle
-      pendingTargetRef.current = targetTimeRef.current;
-      return;
-    }
-
-    const target = targetTimeRef.current;
-    const diff = Math.abs(video.currentTime - target);
-
-    // Only issue seek if target has meaningfully moved (> 0.02s)
-    if (diff > 0.02) {
-      isSeekingRef.current = true;
-      try {
-        video.currentTime = target;
-      } catch {
-        isSeekingRef.current = false;
-      }
-    }
-  }, []);
-
-  const scheduleSeek = useCallback(
-    (time: number) => {
-      targetTimeRef.current = time;
-      if (animFrameIdRef.current === null) {
-        animFrameIdRef.current = requestAnimationFrame(executeSeek);
-      }
-    },
-    [executeSeek]
-  );
-
-  // Handle Seeked event to drain queued target times without infinite revert loops
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleSeeked = () => {
-      isSeekingRef.current = false;
-      if (pendingTargetRef.current !== null) {
-        const nextTarget = pendingTargetRef.current;
-        pendingTargetRef.current = null;
-        targetTimeRef.current = nextTarget;
-        const diff = Math.abs(video.currentTime - nextTarget);
-        if (diff > 0.02) {
-          isSeekingRef.current = true;
-          try {
-            video.currentTime = nextTarget;
-          } catch {
-            isSeekingRef.current = false;
-          }
+    // Retrieve requested frame or nearest loaded neighbor for continuous smoothness
+    let img = imagesRef.current[index];
+    if (!img || !img.complete || img.naturalWidth === 0) {
+      // Find nearest preloaded frame to prevent any blank visual gap
+      for (let offset = 1; offset < TOTAL_FRAMES; offset++) {
+        const prev = imagesRef.current[index - offset];
+        if (prev && prev.complete && prev.naturalWidth > 0) {
+          img = prev;
+          break;
+        }
+        const next = imagesRef.current[index + offset];
+        if (next && next.complete && next.naturalWidth > 0) {
+          img = next;
+          break;
         }
       }
-    };
+    }
 
-    video.addEventListener("seeked", handleSeeked);
-    return () => {
-      video.removeEventListener("seeked", handleSeeked);
-      if (animFrameIdRef.current !== null) {
-        cancelAnimationFrame(animFrameIdRef.current);
+    if (img && img.complete && img.naturalWidth > 0) {
+      if (lastDrawnIndexRef.current === index && img === imagesRef.current[index]) {
+        return; // Already painted
       }
-    };
+      lastDrawnIndexRef.current = index;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    }
   }, []);
 
   // Update Chapter DOM elements directly without triggering React re-renders
   const updateChapterVisuals = useCallback((progress: number) => {
     const fadeWindow = 0.05;
-
     let currentActive = 0;
 
     CHAPTERS.forEach((chapter, idx) => {
@@ -228,67 +184,99 @@ export const CinematicScrollExperience: React.FC = () => {
     }
   }, []);
 
-  // Synchronize video timeline on loadedmetadata without forcing currentTime = 0
-  const handleLoadedMetadata = () => {
-    const video = videoRef.current;
-    const container = containerRef.current;
-    if (!video) return;
+  // Progressive Preloading Engine: Instant Frame 0 + Non-Blocking Background Queue
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-    const duration = video.duration || 10.027;
-    actualDurationRef.current = duration;
-    setIsVideoLoaded(true);
-    video.pause();
+    const canvas = canvasRef.current;
+    if (canvas) {
+      // 1280x720 canvas matches the optimized frames
+      canvas.width = 1280;
+      canvas.height = 720;
+    }
 
-    // Check if visitor has already scrolled into the cinematic section
-    let initialProgress = 0;
-    if (container && typeof window !== "undefined") {
-      const rect = container.getBoundingClientRect();
-      const scrollDistance = container.offsetHeight - window.innerHeight;
-      if (scrollDistance > 0 && rect.top < 0) {
-        initialProgress = Math.max(0, Math.min(1, -rect.top / scrollDistance));
+    let isMounted = true;
+
+    // 1. High-priority Frame 0 preload
+    const firstImg = new Image();
+    firstImg.src = getFramePath(0);
+    firstImg.onload = () => {
+      if (!isMounted) return;
+      imagesRef.current[0] = firstImg;
+      drawFrame(0);
+      setIsLoaded(true);
+    };
+
+    // 2. Load immediate initial window (frames 1 to 25)
+    for (let i = 1; i < Math.min(25, TOTAL_FRAMES); i++) {
+      const img = new Image();
+      img.src = getFramePath(i);
+      img.onload = () => {
+        if (isMounted) imagesRef.current[i] = img;
+      };
+    }
+
+    // 3. Progressive background worker for remaining frames
+    let nextIndex = 25;
+    const batchSize = 15;
+
+    const loadNextBatch = () => {
+      if (!isMounted || nextIndex >= TOTAL_FRAMES) return;
+      const end = Math.min(nextIndex + batchSize, TOTAL_FRAMES);
+      for (let i = nextIndex; i < end; i++) {
+        const img = new Image();
+        img.src = getFramePath(i);
+        img.onload = () => {
+          if (isMounted) imagesRef.current[i] = img;
+        };
       }
+      nextIndex = end;
+      if (nextIndex < TOTAL_FRAMES) {
+        if ("requestIdleCallback" in window) {
+          (window as any).requestIdleCallback(loadNextBatch, { timeout: 1000 });
+        } else {
+          setTimeout(loadNextBatch, 50);
+        }
+      }
+    };
+
+    if ("requestIdleCallback" in window) {
+      (window as any).requestIdleCallback(loadNextBatch, { timeout: 1000 });
+    } else {
+      setTimeout(loadNextBatch, 100);
     }
 
-    const scrubDuration = duration - START_OFFSET;
-    const target = Math.min(Math.max(START_OFFSET + initialProgress * scrubDuration, START_OFFSET), duration - 0.02);
-    targetTimeRef.current = target;
-    try {
-      video.currentTime = target;
-    } catch {
-      // safe seek fallback
-    }
+    // Expose runtime debug hook
+    (window as any).__cinematicFramePlayer = {
+      totalFrames: TOTAL_FRAMES,
+      getCurrentFrame: () => lastDrawnIndexRef.current,
+      drawFrame: (idx: number) => drawFrame(idx),
+    };
 
-    updateChapterVisuals(initialProgress);
-    try {
-      ScrollTrigger.refresh();
-    } catch {
-      // safe refresh fallback
-    }
-  };
+    return () => {
+      isMounted = false;
+    };
+  }, [drawFrame]);
 
   // GSAP ScrollTrigger configuration using Pure CSS Sticky (NO GSAP pin or pinSpacing)
   useEffect(() => {
     const container = containerRef.current;
-    const video = videoRef.current;
-    if (!container || !video) return;
+    if (!container) return;
 
     const ctx = gsap.context(() => {
       ScrollTrigger.create({
         trigger: container,
         start: "top top",
         end: "bottom bottom",
-        scrub: 0.1, // Smooth, low-latency tracking
+        scrub: 0.05, // Ultra-responsive frame scrub with instant canvas draw
         invalidateOnRefresh: true,
         onUpdate: (self) => {
           const p = self.progress; // 0.0 to 1.0
-          const duration = actualDurationRef.current;
-          const scrubDuration = Math.max(duration - START_OFFSET, 1);
-          const target = Math.min(
-            Math.max(START_OFFSET + p * scrubDuration, START_OFFSET),
-            duration - 0.02
+          const frameIndex = Math.min(
+            TOTAL_FRAMES - 1,
+            Math.max(0, Math.floor(p * (TOTAL_FRAMES - 1)))
           );
-
-          scheduleSeek(target);
+          drawFrame(frameIndex);
           updateChapterVisuals(p);
         },
       });
@@ -297,7 +285,7 @@ export const CinematicScrollExperience: React.FC = () => {
     return () => {
       ctx.revert();
     };
-  }, [scheduleSeek, updateChapterVisuals]);
+  }, [drawFrame, updateChapterVisuals]);
 
   // Chapter navigation: scrolls smoothly to the chapter's position in the track
   const scrollToChapter = (chapter: ChapterConfig) => {
@@ -316,39 +304,30 @@ export const CinematicScrollExperience: React.FC = () => {
 
   // Sound toggle handler
   const toggleSound = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    const newMuted = !isMuted;
-    video.muted = newMuted;
-    setIsMuted(newMuted);
+    setIsMuted(!isMuted);
   };
 
   return (
     <section
       ref={containerRef}
       id="cinematic-experience"
-      className="relative w-full bg-[#000000] text-luxury-ivory overflow-visible h-[280vh] md:h-[380vh]"
+      className="relative w-full bg-[#000000] text-luxury-ivory overflow-visible"
+      style={{
+        height: "380vh",
+      }}
     >
       {/* Pinned Stage: Managed purely via CSS sticky (NO GSAP pin-spacer conflict) */}
       <div
         ref={stageRef}
         className="sticky top-0 w-full h-[100svh] overflow-hidden flex items-center justify-center bg-[#000000] z-20"
       >
-        {/* Layer 1: Cinematic Video Presentation */}
+        {/* Layer 1: High-Performance Canvas Frame Sequence Presentation */}
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden pointer-events-none">
-          <video
-            ref={videoRef}
-            src="/videos/Generated%20video%201.mp4"
-            muted={isMuted}
-            playsInline
-            preload="auto"
-            loop={false}
-            autoPlay={false}
-            onLoadedMetadata={handleLoadedMetadata}
-            onError={(e) => console.warn("AUCTIONLY Cinematic Video Notice:", e)}
+          <canvas
+            ref={canvasRef}
             className="w-full h-full object-cover object-center pointer-events-none select-none transition-opacity duration-700"
             style={{
-              opacity: isVideoLoaded ? 1 : 0.5,
+              opacity: isLoaded ? 1 : 0.6,
               filter: "contrast(1.04) brightness(0.96)",
             }}
           />
