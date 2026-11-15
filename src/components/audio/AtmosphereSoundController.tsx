@@ -14,6 +14,10 @@ export const AtmosphereSoundController: React.FC<{ className?: string }> = ({ cl
       setIsPlaying(playing);
       setVolume(vol);
     });
+
+    // Auto-start gallery atmosphere audio when site opens
+    manager.startAutoplay();
+
     return unsubscribe;
   }, []);
 
