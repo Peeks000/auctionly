@@ -1,6 +1,35 @@
 "use client";
 
-type AudioListener = (isPlaying: boolean, volume: number) => void;
+export interface AtmosphereTrack {
+  id: string;
+  title: string;
+  artist?: string;
+  src: string;
+  fallbackSrc: string;
+}
+
+export const ATMOSPHERE_PLAYLIST: AtmosphereTrack[] = [
+  {
+    id: "alicia-violin",
+    title: "Alicia (Violin)",
+    artist: "Curatorial Strings",
+    src: encodeURI("/music/Alicia (Violin).mp3"),
+    fallbackSrc: "/music/alicia-violin.mp3",
+  },
+  {
+    id: "lumiere-a-laube",
+    title: "Lumière à l’Aube",
+    artist: "Lumière",
+    src: encodeURI("/music/Lumière - Lumière à l’Aube.mp3"),
+    fallbackSrc: "/music/lumiere-a-laube.mp3",
+  },
+];
+
+export type AudioListener = (
+  isPlaying: boolean,
+  volume: number,
+  currentTrack: AtmosphereTrack
+) => void;
 
 class AtmosphereAudioManager {
   private static instance: AtmosphereAudioManager;
@@ -14,6 +43,7 @@ class AtmosphereAudioManager {
   private userExplicitlyPaused = false;
   private hasAutoStarted = false;
   private activeTriggerHandler: ((e: Event) => void) | null = null;
+  private currentTrackIndex = 0;
 
   private constructor() {
     if (typeof window !== "undefined") {
@@ -28,17 +58,36 @@ class AtmosphereAudioManager {
     return AtmosphereAudioManager.instance;
   }
 
+  public getCurrentTrack(): AtmosphereTrack {
+    return ATMOSPHERE_PLAYLIST[this.currentTrackIndex] || ATMOSPHERE_PLAYLIST[0];
+  }
+
+  public getCurrentTrackIndex(): number {
+    return this.currentTrackIndex;
+  }
+
+  public getPlaylist(): AtmosphereTrack[] {
+    return ATMOSPHERE_PLAYLIST;
+  }
+
   private init() {
     if (this.isInitialized || typeof window === "undefined") return;
     try {
-      this.audio = new Audio(encodeURI("/music/Alicia (Violin).mp3"));
-      this.audio.loop = true;
+      const track = this.getCurrentTrack();
+      this.audio = new Audio(track.src);
+      // loop MUST be false so that the 'ended' event fires and transitions to the next song!
+      this.audio.loop = false;
       this.audio.volume = 0;
       this.audio.preload = "auto";
 
+      // Robust fallback handler for special characters / server environment variations
       this.audio.addEventListener("error", () => {
-        if (this.audio && !this.audio.src.includes("alicia-violin.mp3")) {
-          this.audio.src = "/music/alicia-violin.mp3";
+        const cur = this.getCurrentTrack();
+        if (this.audio && !this.audio.src.includes(cur.fallbackSrc)) {
+          console.warn(
+            `[AtmosphereAudio] Primary audio load failed for ${cur.title}, trying fallback ${cur.fallbackSrc}`
+          );
+          this.audio.src = cur.fallbackSrc;
           this.audio.load();
           if (this.isPlaying) {
             this.audio.play().catch(() => {});
@@ -46,10 +95,14 @@ class AtmosphereAudioManager {
         }
       });
 
+      // Sequential Looping: When the current track ends, advance to the next track in the playlist
+      // (Alicia Violin -> Lumière à l'Aube -> Alicia Violin -> ...)
       this.audio.addEventListener("ended", () => {
-        if (this.isPlaying && this.audio) {
-          this.audio.currentTime = 0;
-          this.audio.play().catch(() => {});
+        console.log(
+          `[AtmosphereAudio] Track finished: ${this.getCurrentTrack().title}. Playing next track in playlist.`
+        );
+        if (this.isPlaying) {
+          this.nextTrack();
         }
       });
 
@@ -61,18 +114,75 @@ class AtmosphereAudioManager {
 
   public subscribe(listener: AudioListener): () => void {
     this.listeners.add(listener);
-    listener(this.isPlaying, this.currentVolume);
+    listener(this.isPlaying, this.currentVolume, this.getCurrentTrack());
     return () => {
       this.listeners.delete(listener);
     };
   }
 
   private notify() {
-    this.listeners.forEach((fn) => fn(this.isPlaying, this.currentVolume));
+    const cur = this.getCurrentTrack();
+    this.listeners.forEach((fn) => fn(this.isPlaying, this.currentVolume, cur));
   }
 
   public getIsPlaying(): boolean {
     return this.isPlaying;
+  }
+
+  /**
+   * Advances sequentially to the next track in the playlist.
+   * If music was playing, the new track automatically begins playing immediately.
+   */
+  public async nextTrack(): Promise<void> {
+    this.currentTrackIndex = (this.currentTrackIndex + 1) % ATMOSPHERE_PLAYLIST.length;
+    const next = this.getCurrentTrack();
+    console.log(`[AtmosphereAudio] Switch to track #${this.currentTrackIndex + 1}: ${next.title}`);
+
+    if (this.audio) {
+      this.audio.src = next.src;
+      this.audio.currentTime = 0;
+      this.audio.load();
+      if (this.isPlaying) {
+        try {
+          await this.audio.play();
+        } catch (err) {
+          console.warn("[AtmosphereAudio] Play error on next track, trying fallback:", err);
+          if (this.audio && next.fallbackSrc) {
+            this.audio.src = next.fallbackSrc;
+            this.audio.load();
+            await this.audio.play().catch(() => {});
+          }
+        }
+      }
+    }
+    this.notify();
+  }
+
+  /**
+   * Sets track directly by index.
+   */
+  public async setTrack(index: number): Promise<void> {
+    if (index < 0 || index >= ATMOSPHERE_PLAYLIST.length) return;
+    this.currentTrackIndex = index;
+    const track = this.getCurrentTrack();
+
+    if (this.audio) {
+      this.audio.src = track.src;
+      this.audio.currentTime = 0;
+      this.audio.load();
+      if (this.isPlaying) {
+        try {
+          await this.audio.play();
+        } catch (err) {
+          if (this.audio && track.fallbackSrc) {
+            this.audio.src = track.fallbackSrc;
+            this.audio.load();
+            await this.audio.play().catch(() => {});
+          }
+        }
+      }
+    }
+    this.notify();
   }
 
   /**
@@ -124,8 +234,6 @@ class AtmosphereAudioManager {
         // Successfully started audio! Clean up listeners
         this.removeInteractionTrigger();
       } catch (err) {
-        // If this specific event wasn't recognized as a valid user gesture by browser (e.g. non-qualifying event),
-        // DO NOT remove the listeners. Keep waiting for the next click/tap!
         console.warn("[AtmosphereAudio] Autoplay attempt on", e.type, "pending user activation:", err);
       }
     };
@@ -256,5 +364,6 @@ class AtmosphereAudioManager {
   }
 }
 
-export const atmosphereAudio = typeof window !== "undefined" ? AtmosphereAudioManager.getInstance() : null;
+export const atmosphereAudio =
+  typeof window !== "undefined" ? AtmosphereAudioManager.getInstance() : null;
 export default AtmosphereAudioManager;

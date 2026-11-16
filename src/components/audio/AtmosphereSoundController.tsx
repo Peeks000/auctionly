@@ -1,18 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import AtmosphereAudioManager from "@/lib/audioManager";
-import { Volume2, VolumeX } from "lucide-react";
+import AtmosphereAudioManager, { AtmosphereTrack, ATMOSPHERE_PLAYLIST } from "@/lib/audioManager";
+import { Volume2, VolumeX, SkipForward } from "lucide-react";
 
 export const AtmosphereSoundController: React.FC<{ className?: string }> = ({ className = "" }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0);
+  const [currentTrack, setCurrentTrack] = useState<AtmosphereTrack>(ATMOSPHERE_PLAYLIST[0]);
 
   useEffect(() => {
     const manager = AtmosphereAudioManager.getInstance();
-    const unsubscribe = manager.subscribe((playing, vol) => {
+    const unsubscribe = manager.subscribe((playing, vol, track) => {
       setIsPlaying(playing);
       setVolume(vol);
+      if (track) {
+        setCurrentTrack(track);
+      }
     });
 
     // Auto-start gallery atmosphere audio when site opens
@@ -26,6 +30,12 @@ export const AtmosphereSoundController: React.FC<{ className?: string }> = ({ cl
     manager.toggle();
   };
 
+  const handleSkipNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const manager = AtmosphereAudioManager.getInstance();
+    manager.nextTrack();
+  };
+
   return (
     <div className={`pointer-events-auto ${className}`}>
       <button
@@ -36,7 +46,7 @@ export const AtmosphereSoundController: React.FC<{ className?: string }> = ({ cl
             ? "bg-[#0A0907]/90 border-luxury-gold/60 text-luxury-gold shadow-[0_0_20px_rgba(198,166,106,0.35)]"
             : "bg-[#0A0907]/80 border-luxury-champagne/20 text-luxury-champagne/80 hover:text-luxury-gold hover:border-luxury-gold/40"
         }`}
-        aria-label={isPlaying ? "Mute gallery atmosphere" : "Play gallery atmosphere"}
+        aria-label={isPlaying ? `Mute gallery atmosphere (${currentTrack.title})` : `Play gallery atmosphere (${currentTrack.title})`}
       >
         {/* Animated Equalizer Wave Bars */}
         <div className="flex items-end gap-[3px] h-3.5 w-4 shrink-0">
@@ -62,21 +72,42 @@ export const AtmosphereSoundController: React.FC<{ className?: string }> = ({ cl
           />
         </div>
 
-        {/* Text Label */}
+        {/* Text Label: Dynamic track title with smooth transition */}
         <div className="flex flex-col text-left pr-1">
           <span className="text-[9px] tracking-[0.25em] uppercase font-semibold leading-tight text-luxury-gold">
             {isPlaying ? "ATMOSPHERE ACTIVE" : "PLAY ATMOSPHERE"}
           </span>
-          <span className="text-[8px] tracking-[0.18em] uppercase text-luxury-champagne/60 font-light truncate max-w-[130px]">
-            Alicia (Violin)
+          <span className="text-[8px] tracking-[0.18em] uppercase text-luxury-champagne/60 font-light truncate max-w-[135px]">
+            {currentTrack.title}
           </span>
         </div>
 
+        {/* Volume status icon */}
         {isPlaying ? (
           <Volume2 size={13} className="text-luxury-gold shrink-0" />
         ) : (
           <VolumeX size={13} className="text-luxury-champagne/60 group-hover:text-luxury-gold shrink-0 transition-colors" />
         )}
+
+        {/* Next Track button (Subtle luxury control) */}
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={handleSkipNext}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.stopPropagation();
+              const manager = AtmosphereAudioManager.getInstance();
+              manager.nextTrack();
+            }
+          }}
+          title={`Skip to next track`}
+          aria-label="Skip to next track in playlist"
+          className="ml-0.5 p-1 text-luxury-champagne/50 hover:text-luxury-gold transition-colors hover:scale-110 active:scale-95"
+        >
+          <SkipForward size={11} />
+        </span>
       </button>
     </div>
   );
