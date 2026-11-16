@@ -2,9 +2,46 @@
 
 A premium digital auction house bringing rare collectibles, fine art, historic antiquities and luxury objects into an immersive online auction experience.
 
-**Live Website:** https://auctionly-three.vercel.app
+**Live Website:** https://auctionly-three.vercel.app  
+**GitHub Repository:** https://github.com/Peeks000/auctionly  
+**Product Demonstration Video:** [docs/demo/auctionly-demo.mp4](docs/demo/auctionly-demo.mp4)
 
-**GitHub Repository:** https://github.com/Peeks000/auctionly
+---
+
+## 🎬 Product Demonstration
+
+[![AUCTIONLY Product Demonstration Walkthrough](docs/screenshots/homepage.png)](docs/demo/auctionly-demo.mp4)
+
+> 🎥 **[Watch Full 1080p Walkthrough Video (MP4)](docs/demo/auctionly-demo.mp4)** — *A 40-second tour showcasing the cinematic museum hero with ambient idle atmosphere, scroll progression, auction catalogue, real-time WebGL 3D collectible stage, and synchronized curatorial photography.*
+
+---
+
+## 📸 Interface Showcase
+
+### 01. Cinematic Museum Homepage
+*Classical marble sculpture with dynamic sunlight sweep, floating atmospheric dust motes, and curated auction departments.*
+![AUCTIONLY Homepage](docs/screenshots/homepage.png)
+
+### 02. Curated Auction Catalogue
+*Live auction lot cards showcasing verified provenance, real-time INR proxy bidding, reserve status, and interactive 3D indicators.*
+![Auction Catalogue](docs/screenshots/catalogue.png)
+
+### 03. Interactive 3D Collectible Inspection
+*Real-time WebGL 360° orbit inspection of digital twins with custom PBR lighting, material fidelity, and studio calibration.*
+![Interactive 3D Experience](docs/screenshots/3d-experience.png)
+
+### 04. Curatorial Museum Photography
+*High-resolution specimen photography synchronized with 3D models for dual forensic and aesthetic inspection.*
+![Curatorial Photography](docs/screenshots/curatorial-photography.png)
+
+### 05. Responsive Mobile Experience
+*Pixel-perfect mobile adaptation preserving editorial typography, 3D interaction, and touch-first bidding workflows.*
+
+<p align="center">
+  <img src="docs/screenshots/mobile.png" alt="AUCTIONLY Mobile Experience" width="360" />
+</p>
+
+---
 
 ## Project Highlights
 
