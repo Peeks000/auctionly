@@ -37,6 +37,20 @@ interface ChapterConfig {
   alignment: "left" | "center" | "right";
 }
 
+// Atmospheric Museum Dust Particle Interface
+interface DustParticle {
+  x: number;
+  y: number;
+  radius: number;
+  baseAlpha: number;
+  alpha: number;
+  vx: number;
+  vy: number;
+  pulsePhase: number;
+  pulseSpeed: number;
+  color: string;
+}
+
 // Continuous Curatorial Journey Chapters:
 // Chapter 01 is the Grand Gallery Hero itself (progress 0.00 - 0.14).
 // Chapters 02, 03, 04 continue smoothly from the eye transition into the gallery collections.
@@ -101,6 +115,19 @@ export const CinematicHeroExperience: React.FC = () => {
   const chapterDomRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(-1);
   const activeChapterRef = useRef<number>(-1);
+
+  // Ambient Idle Atmosphere Refs
+  const ambientLayerRef = useRef<HTMLDivElement>(null);
+  const bustHighlightRef = useRef<HTMLDivElement>(null);
+  const dustCanvasRef = useRef<HTMLCanvasElement>(null);
+  const isIdleRef = useRef(false);
+  const isHeroVisibleRef = useRef(true);
+  const currentProgressRef = useRef(0);
+  const scrollDebounceTimerRef = useRef<number | null>(null);
+  const dustAnimIdRef = useRef<number | null>(null);
+  const isReducedMotionRef = useRef(false);
+  const startDustLoopRef = useRef<(() => void) | null>(null);
+  const stopDustLoopRef = useRef<(() => void) | null>(null);
 
   // Pointer & mouse tracking with window-level detection
   useEffect(() => {
@@ -345,6 +372,26 @@ export const CinematicHeroExperience: React.FC = () => {
         }
       }
     }
+
+    // 3. Sculpture Illumination Progress Binding (Strictly visible when bust is in view: progress <= 0.14)
+    currentProgressRef.current = progress;
+    const bustHighlight = bustHighlightRef.current;
+    if (bustHighlight) {
+      if (progress <= 0.14) {
+        const zoomT = progress / 0.14;
+        const scale = 1.0 + Math.pow(zoomT, 1.4) * 2.25;
+        let bustOpacity = 1;
+        if (zoomT > 0.7) {
+          bustOpacity = Math.max(0, 1 - (zoomT - 0.7) / 0.3);
+        }
+        bustHighlight.style.display = "block";
+        bustHighlight.style.opacity = bustOpacity.toFixed(3);
+        bustHighlight.style.transform = `scale(${scale.toFixed(4)})`;
+      } else {
+        bustHighlight.style.display = "none";
+        bustHighlight.style.opacity = "0";
+      }
+    }
   }, []);
 
   // Progressive Frame Preloading Engine
@@ -475,6 +522,230 @@ export const CinematicHeroExperience: React.FC = () => {
     });
   };
 
+  // Museum Atmospheric Dust Initialization Helper
+  const initDustParticles = (width: number, height: number): DustParticle[] => {
+    const isMobile = width < 768;
+    const count = isMobile ? 15 : 35;
+    const particles: DustParticle[] = [];
+    const colors = [
+      "rgba(247, 243, 235,", // warm white
+      "rgba(255, 248, 225,", // soft ivory
+      "rgba(212, 175, 55,",  // champagne gold
+      "rgba(198, 166, 106,", // luxury bronze
+    ];
+
+    for (let i = 0; i < count; i++) {
+      // Concentrate particles along diagonal sunbeam swath (top-right toward center/bottom-left)
+      const diagonalT = Math.random();
+      const spreadX = (Math.random() - 0.5) * width * 0.45;
+      const spreadY = (Math.random() - 0.5) * height * 0.35;
+      const startX = width * (0.85 - diagonalT * 0.6) + spreadX;
+      const startY = height * (0.05 + diagonalT * 0.75) + spreadY;
+
+      particles.push({
+        x: Math.max(0, Math.min(width, startX)),
+        y: Math.max(0, Math.min(height, startY)),
+        radius: 0.6 + Math.random() * 1.3,
+        baseAlpha: 0.15 + Math.random() * 0.35,
+        alpha: 0.2,
+        vx: -0.06 - Math.random() * 0.12,
+        vy: -0.10 + Math.random() * 0.22,
+        pulsePhase: Math.random() * Math.PI * 2,
+        pulseSpeed: 0.015 + Math.random() * 0.02,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+    return particles;
+  };
+
+  // 1. Dust Particle RAF Simulation Engine (Active ONLY when Idle and Hero is Visible)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    isReducedMotionRef.current = motionQuery.matches;
+    const onMotionChange = (e: MediaQueryListEvent) => {
+      isReducedMotionRef.current = e.matches;
+      if (e.matches) {
+        stopDustLoopRef.current?.();
+      } else if (isIdleRef.current && isHeroVisibleRef.current) {
+        startDustLoopRef.current?.();
+      }
+    };
+    motionQuery.addEventListener("change", onMotionChange);
+
+    const canvas = dustCanvasRef.current;
+    if (!canvas) return;
+
+    let width = (canvas.width = canvas.parentElement?.clientWidth || window.innerWidth);
+    let height = (canvas.height = canvas.parentElement?.clientHeight || window.innerHeight);
+    let particles = initDustParticles(width, height);
+
+    const onResize = () => {
+      if (!canvas || !canvas.parentElement) return;
+      width = canvas.width = canvas.parentElement.clientWidth;
+      height = canvas.height = canvas.parentElement.clientHeight;
+      particles = initDustParticles(width, height);
+    };
+    window.addEventListener("resize", onResize, { passive: true });
+
+    const animateDust = () => {
+      if (
+        !isIdleRef.current ||
+        !isHeroVisibleRef.current ||
+        isReducedMotionRef.current ||
+        document.hidden
+      ) {
+        dustAnimIdRef.current = null;
+        return;
+      }
+
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, width, height);
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.pulsePhase += p.pulseSpeed;
+
+          const pulse = (Math.sin(p.pulsePhase) + 1) * 0.5;
+          p.alpha = p.baseAlpha * (0.6 + 0.4 * pulse);
+
+          if (p.x < -10) p.x = width + 5;
+          if (p.x > width + 10) p.x = -5;
+          if (p.y < -10) p.y = height + 5;
+          if (p.y > height + 10) p.y = -5;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `${p.color} ${p.alpha.toFixed(3)})`;
+          ctx.fill();
+        }
+      }
+
+      dustAnimIdRef.current = requestAnimationFrame(animateDust);
+    };
+
+    startDustLoopRef.current = () => {
+      if (!dustAnimIdRef.current && !isReducedMotionRef.current && !document.hidden) {
+        dustAnimIdRef.current = requestAnimationFrame(animateDust);
+      }
+    };
+
+    stopDustLoopRef.current = () => {
+      if (dustAnimIdRef.current !== null) {
+        cancelAnimationFrame(dustAnimIdRef.current);
+        dustAnimIdRef.current = null;
+      }
+    };
+
+    return () => {
+      motionQuery.removeEventListener("change", onMotionChange);
+      window.removeEventListener("resize", onResize);
+      if (dustAnimIdRef.current !== null) {
+        cancelAnimationFrame(dustAnimIdRef.current);
+        dustAnimIdRef.current = null;
+      }
+    };
+  }, []);
+
+  // 2. Scroll-Aware Idle State Detection & Lifecycle Engine
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const setIdleState = (idle: boolean) => {
+      if (isIdleRef.current === idle) return;
+      isIdleRef.current = idle;
+
+      const layer = ambientLayerRef.current;
+      if (layer) {
+        if (idle && isHeroVisibleRef.current) {
+          layer.style.opacity = "1";
+          layer.style.transition = "opacity 0.8s ease-out";
+          startDustLoopRef.current?.();
+        } else {
+          layer.style.opacity = "0";
+          layer.style.transition = "opacity 0.35s ease-out";
+          stopDustLoopRef.current?.();
+        }
+      }
+    };
+
+    // STATE A: Active Scrolling -> immediately drop overlays & pause RAF
+    const onScroll = () => {
+      setIdleState(false);
+
+      if (scrollDebounceTimerRef.current !== null) {
+        window.clearTimeout(scrollDebounceTimerRef.current);
+      }
+
+      // STATE B: 600ms debounce of inactivity enters Idle atmosphere
+      scrollDebounceTimerRef.current = window.setTimeout(() => {
+        if (isHeroVisibleRef.current) {
+          setIdleState(true);
+        }
+      }, 600);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    // Initial load idle trigger
+    const initialTimer = window.setTimeout(() => {
+      if (isHeroVisibleRef.current) {
+        setIdleState(true);
+      }
+    }, 700);
+
+    // IntersectionObserver to pause idle atmosphere when hero leaves viewport
+    const container = containerRef.current;
+    let observer: IntersectionObserver | null = null;
+    if (container && "IntersectionObserver" in window) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          isHeroVisibleRef.current = entry.isIntersecting;
+          if (!entry.isIntersecting) {
+            setIdleState(false);
+          } else {
+            if (scrollDebounceTimerRef.current !== null) {
+              window.clearTimeout(scrollDebounceTimerRef.current);
+            }
+            scrollDebounceTimerRef.current = window.setTimeout(() => {
+              if (isHeroVisibleRef.current) {
+                setIdleState(true);
+              }
+            }, 600);
+          }
+        },
+        { threshold: 0.05 }
+      );
+      observer.observe(container);
+    }
+
+    // VisibilityChange listener (tab switch)
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        stopDustLoopRef.current?.();
+      } else if (isIdleRef.current && isHeroVisibleRef.current) {
+        startDustLoopRef.current?.();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (scrollDebounceTimerRef.current !== null) {
+        window.clearTimeout(scrollDebounceTimerRef.current);
+      }
+      window.clearTimeout(initialTimer);
+      if (observer) observer.disconnect();
+      stopDustLoopRef.current?.();
+    };
+  }, []);
+
   return (
     <section
       ref={containerRef}
@@ -582,6 +853,121 @@ export const CinematicHeroExperience: React.FC = () => {
           <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#000000]/85 via-[#000000]/45 to-transparent" />
           <div className="absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-[#000000]/60 to-transparent" />
           <div className="absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-[#000000]/60 to-transparent" />
+        </div>
+
+        {/* ====================================================================
+            AMBIENT IDLE ATMOSPHERE LAYER (z-[14], pointer-events-none)
+            - Activates ONLY in STATE B (idle / not scrolling)
+            - Fades out in STATE A (active scrolling)
+            - 100% pointer-events-none: Never blocks CTA buttons, audio or concierge
+           ==================================================================== */}
+        <div
+          ref={ambientLayerRef}
+          id="hero-ambient-atmosphere"
+          className="absolute inset-0 z-[14] pointer-events-none overflow-hidden transition-opacity duration-700 ease-out"
+          style={{ opacity: 0 }}
+          aria-hidden="true"
+        >
+          {/* EFFECT 1: Moving Volumetric Sun Rays (Upper-Right museum windows) */}
+          <div
+            id="ambient-volumetric-sunbeams"
+            className="absolute inset-0 pointer-events-none overflow-hidden"
+            style={{
+              transformOrigin: "85% 0%",
+              animation: "sunbeamDrift 26s ease-in-out infinite alternate",
+            }}
+          >
+            {/* Primary Broad Sunbeam Shaft */}
+            <div
+              className="absolute -top-1/4 -right-1/4 w-[140%] h-[150%] pointer-events-none"
+              style={{
+                background:
+                  "conic-gradient(from 215deg at 88% 0%, transparent 0deg, rgba(247,243,235,0.02) 8deg, rgba(255,248,225,0.18) 16deg, rgba(212,175,55,0.12) 24deg, rgba(212,175,55,0.03) 32deg, transparent 40deg)",
+                filter: "blur(28px)",
+                animation: "sunbeamShimmer 18s ease-in-out infinite alternate",
+              }}
+            />
+
+            {/* Secondary Focused Radiant Beam */}
+            <div
+              className="absolute -top-10 -right-10 w-[120%] h-[130%] pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(132deg, rgba(255,252,245,0.22) 0%, rgba(212,175,55,0.14) 28%, rgba(212,175,55,0.02) 65%, transparent 85%)",
+                clipPath: "polygon(78% 0%, 96% 0%, 42% 100%, 15% 100%)",
+                filter: "blur(22px)",
+              }}
+            />
+
+            {/* Tertiary Soft Window Glow Aperture */}
+            <div
+              className="absolute top-0 right-0 w-[55vw] h-[55vh] pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 92% 5%, rgba(255,250,235,0.25) 0%, rgba(212,175,55,0.10) 45%, transparent 75%)",
+                filter: "blur(35px)",
+              }}
+            />
+          </div>
+
+          {/* EFFECT 2: Floating Museum Dust Particles */}
+          <canvas
+            ref={dustCanvasRef}
+            id="ambient-museum-dust"
+            className="absolute inset-0 w-full h-full pointer-events-none"
+          />
+
+          {/* EFFECT 3: Subtle Sculpture Illumination (Marble Bust forehead, cheeks, shoulders)
+              Strictly visible when bust is in view: progress <= 0.14 */}
+          <div
+            ref={bustHighlightRef}
+            id="bust-sculpture-illumination"
+            className="absolute inset-0 pointer-events-none overflow-hidden transition-opacity duration-300"
+            style={{
+              transformOrigin: "50.5% 38%",
+              display: "block",
+              opacity: 1,
+            }}
+          >
+            {/* Forehead and Cheeks gentle warm luminance */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(circle 240px at 50.5% 37.5%, rgba(255,250,238,0.20) 0%, rgba(212,175,55,0.08) 50%, transparent 80%)",
+                mixBlendMode: "soft-light",
+                animation: "bustBreathingGlow 14s ease-in-out infinite alternate",
+              }}
+            />
+            {/* Shoulders and Collarbone soft ambient rim */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse 340px 180px at 50.5% 54%, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.04) 55%, transparent 80%)",
+                mixBlendMode: "soft-light",
+              }}
+            />
+          </div>
+
+          {/* EFFECT 4: Moving Marble Floor Reflections */}
+          <div
+            id="ambient-floor-reflections"
+            className="absolute bottom-0 inset-x-0 h-28 sm:h-36 pointer-events-none overflow-hidden"
+            style={{
+              animation: "floorReflectionShimmer 22s ease-in-out infinite alternate",
+            }}
+          >
+            <div
+              className="w-[120%] -ml-[10%] h-full pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse 70% 60% at 55% 85%, rgba(212,175,55,0.14) 0%, rgba(198,166,106,0.06) 45%, transparent 80%)",
+                filter: "blur(18px)",
+                mixBlendMode: "screen",
+              }}
+            />
+          </div>
         </div>
 
         {/* Global Dark Vignette Overlay for Crisp Readability across all chapters */}

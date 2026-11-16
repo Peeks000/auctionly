@@ -98,6 +98,59 @@ body {
   50% { height: 3px; }
 }
 
+/* Cinematic Hero Ambient Idle Atmosphere Keyframes */
+@keyframes sunbeamDrift {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.22;
+  }
+  30% {
+    transform: rotate(1.2deg) scale(1.03);
+    opacity: 0.28;
+  }
+  70% {
+    transform: rotate(-1.4deg) scale(0.98);
+    opacity: 0.18;
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.22;
+  }
+}
+
+@keyframes sunbeamShimmer {
+  0%, 100% {
+    opacity: 0.15;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.28;
+    transform: translate3d(-12px, 8px, 0) scale(1.02);
+  }
+}
+
+@keyframes bustBreathingGlow {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.24;
+    transform: scale(1.025);
+  }
+}
+
+@keyframes floorReflectionShimmer {
+  0%, 100% {
+    transform: translate3d(-3%, 0, 0) scaleX(1);
+    opacity: 0.12;
+  }
+  50% {
+    transform: translate3d(3%, 0, 0) scaleX(1.06);
+    opacity: 0.22;
+  }
+}
+
 /* 3D Perspective Card Support */
 .perspective-1000 {
   perspective: 1000px;
