@@ -5,7 +5,8 @@ import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import ModelViewer3D from "@/components/three/ModelViewer3D";
 import RazorpayCheckoutModal from "@/components/payment/RazorpayCheckoutModal";
-import { mockListings } from "@/lib/data/mockCatalogue";
+import { getListingBySlug } from "@/lib/catalogueService";
+import { useWatchlist, useCountdown } from "@/lib/hooks";
 import { formatINR, calculateAuctionBreakdown } from "@/lib/currency";
 import {
   ShieldCheck,
@@ -27,7 +28,7 @@ export default function LotDetailPage() {
   const slug = params?.slug as string;
 
   // Retrieve lot from catalogue; 404 if not found
-  const listing = mockListings.find((l) => l.slug === slug);
+  const listing = getListingBySlug(slug);
   if (!listing) {
     notFound();
   }
@@ -47,68 +48,11 @@ export default function LotDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [checkoutOrderType, setCheckoutOrderType] = useState<"buy_now" | "auction_win">("buy_now");
-  const [timeLeft, setTimeLeft] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"provenance" | "condition" | "shipping">("provenance");
-  const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
+  const { isBookmarked, toggleWatchlist } = useWatchlist(listing.id);
+  const { timeLeft } = useCountdown(auctionEndTime);
 
   const minNextBidPaisa = currentPrice + (auction?.min_increment || 50000);
-
-  // Sync Watchlist from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("auctionly_watchlist");
-      if (saved) {
-        const list = JSON.parse(saved);
-        if (Array.isArray(list) && list.includes(listing.id)) {
-          setIsBookmarked(true);
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }, [listing.id]);
-
-  const toggleWatchlist = () => {
-    try {
-      const saved = localStorage.getItem("auctionly_watchlist");
-      let list: string[] = saved ? JSON.parse(saved) : [];
-      if (!Array.isArray(list)) list = [];
-
-      let nextState = false;
-      if (list.includes(listing.id)) {
-        list = list.filter((id) => id !== listing.id);
-        nextState = false;
-      } else {
-        list.push(listing.id);
-        nextState = true;
-      }
-      localStorage.setItem("auctionly_watchlist", JSON.stringify(list));
-      setIsBookmarked(nextState);
-      window.dispatchEvent(new Event("storage"));
-    } catch {
-      setIsBookmarked(!isBookmarked);
-    }
-  };
-
-  // Countdown timer based on authoritative server auctionEndTime
-  useEffect(() => {
-    if (!auctionEndTime) return;
-
-    const timer = setInterval(() => {
-      const diff = new Date(auctionEndTime).getTime() - Date.now();
-      if (diff <= 0) {
-        setTimeLeft("Auction Closed");
-        return;
-      }
-      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const m = Math.floor((diff / 1000 / 60) % 60);
-      const s = Math.floor((diff / 1000) % 60);
-      setTimeLeft(`${d > 0 ? `${d}d ` : ""}${h}h ${m}m ${s}s`);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [auctionEndTime]);
 
   // Handle Authoritative Server Bidding Submission
   const handlePlaceBid = async (e: React.FormEvent) => {

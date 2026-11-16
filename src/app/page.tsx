@@ -7,7 +7,12 @@ import CinematicHeroExperience from "@/components/experience/CinematicHeroExperi
 import DepartmentsCarousel3D from "@/components/departments/DepartmentsCarousel3D";
 import ScrollTriggerEnhancer from "@/components/experience/ScrollTriggerEnhancer";
 import { safeImagePath } from "@/lib/images";
-import { mockListings } from "@/lib/data/mockCatalogue";
+import {
+  getFeaturedListings,
+  getBuyNowListings,
+  getLiveAuctionListings,
+  getAllListings,
+} from "@/lib/catalogueService";
 import {
   Gavel,
   ShieldCheck,
@@ -25,10 +30,10 @@ import {
 } from "lucide-react";
 
 export default function HomePage() {
-  const featuredLots = mockListings.filter((l) => l.is_featured);
-  const endingSoonLots = mockListings.filter((l) => l.auction?.status === "active");
-  const liveLots = mockListings.filter((l) => l.auction?.is_live);
-  const buyNowLots = mockListings.filter((l) => l.buy_now_price !== null);
+  const featuredLots = getFeaturedListings();
+  const endingSoonLots = getAllListings().filter((l) => l.auction?.status === "active");
+  const liveLots = getLiveAuctionListings();
+  const buyNowLots = getBuyNowListings();
 
   return (
     <div className="flex flex-col pb-20 bg-[#000000]">

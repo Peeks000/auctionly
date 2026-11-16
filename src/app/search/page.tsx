@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import LotCard from "@/components/catalogue/LotCard";
-import { mockListings, mockCategories } from "@/lib/data/mockCatalogue";
+import { getAllListings, getCategories } from "@/lib/catalogueService";
 import { Search as SearchIcon, X, SlidersHorizontal } from "lucide-react";
 
 export default function SearchPage() {
@@ -10,8 +10,11 @@ export default function SearchPage() {
   const [selectedDept, setSelectedDept] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
 
+  const categories = useMemo(() => getCategories(), []);
+  const allListings = useMemo(() => getAllListings(), []);
+
   const results = useMemo(() => {
-    return mockListings.filter((lot) => {
+    return allListings.filter((lot) => {
       // Dept filter
       if (selectedDept !== "all" && lot.category_id !== selectedDept) return false;
 
@@ -78,7 +81,7 @@ export default function SearchPage() {
             className="bg-luxury-black border border-luxury-subtle/50 rounded-sm px-3 py-2 text-xs text-luxury-champagne focus:border-luxury-gold outline-none uppercase tracking-wider"
           >
             <option value="all">All Departments</option>
-            {mockCategories.map((c) => (
+            {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>

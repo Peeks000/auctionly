@@ -10,13 +10,14 @@ if (typeof window !== "undefined") {
 
 export const ScrollTriggerEnhancer: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const ctxRef = useRef<gsap.Context | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     // Wait slightly for DOM to settle
     const timer = setTimeout(() => {
-      const ctx = gsap.context(() => {
+      ctxRef.current = gsap.context(() => {
         // 1. Featured Auctions Card Grid Stagger
         const featuredCards = document.querySelectorAll("#featured-auctions .grid > div");
         if (featuredCards.length > 0) {
@@ -107,11 +108,13 @@ export const ScrollTriggerEnhancer: React.FC = () => {
           });
         });
       });
-
-      return () => ctx.revert();
     }, 150);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      ctxRef.current?.revert();
+      ctxRef.current = null;
+    };
   }, []);
 
   return <div ref={containerRef} className="hidden" aria-hidden="true" />;

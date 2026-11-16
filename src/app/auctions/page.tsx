@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import LotCard from "@/components/catalogue/LotCard";
-import { mockListings, mockCategories } from "@/lib/data/mockCatalogue";
+import { getAllListings, getCategories } from "@/lib/catalogueService";
 import { Gavel, Clock, Sparkles, Filter, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
@@ -10,7 +10,8 @@ export default function AuctionsPage() {
   const [selectedDept, setSelectedDept] = useState("all");
   const [filterMode, setFilterMode] = useState<"all" | "active" | "closing_soon">("all");
 
-  const timedLots = mockListings.filter((l) => l.auction && !l.auction.is_live);
+  const categories = getCategories();
+  const timedLots = getAllListings().filter((l) => l.auction && !l.auction.is_live);
 
   const filteredLots = timedLots.filter((lot) => {
     if (selectedDept !== "all" && lot.category_id !== selectedDept) return false;
@@ -75,7 +76,7 @@ export default function AuctionsPage() {
           className="bg-luxury-black border border-luxury-subtle/50 rounded-sm px-3 py-1.5 text-xs text-luxury-champagne focus:border-luxury-gold outline-none uppercase tracking-wider"
         >
           <option value="all">All Departments</option>
-          {mockCategories.map((c) => (
+          {categories.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
             </option>

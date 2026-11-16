@@ -1,22 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { verifyRazorpayPaymentSignature } from "@/lib/razorpay";
 import { getOrderByRazorpayId, getOrderByNumber, updateOrderStatus } from "@/lib/ordersStore";
 
+const VerifyPaymentSchema = z.object({
+  razorpay_order_id: z.string().min(1, "razorpay_order_id is required."),
+  razorpay_payment_id: z.string().min(1, "razorpay_payment_id is required."),
+  razorpay_signature: z.string().min(1, "razorpay_signature is required."),
+  orderNumber: z.string().optional(),
+});
+
 export async function POST(req: NextRequest) {
   try {
+    const rawBody = await req.json();
+    const validation = VerifyPaymentSchema.safeParse(rawBody);
+
+    if (!validation.success) {
+      const issues = validation.error.issues.map((i) => i.message).join(", ");
+      return NextResponse.json(
+        { error: `Bad Request: Missing required Razorpay payment verification parameters. (${issues})` },
+        { status: 400 }
+      );
+    }
+
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
       orderNumber,
-    } = await req.json();
-
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return NextResponse.json(
-        { error: "Bad Request: Missing required Razorpay payment verification parameters." },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     // 1. Authoritative Server Lookup: Locate order by Razorpay ID or Order Number
     const existingOrder =
@@ -98,11 +110,11 @@ export async function POST(req: NextRequest) {
       },
       message: existingOrder.isDemo
         ? "Payment verified in Demonstration Sandbox Mode. Test invoice generated (No real bank charges)."
-        : "Payment verified by authoritative Razorpay signature check. Order captured and invoiced.",
+        : "Payment verified authoritatively with Razorpay signature. Invoice dispatched.",
     });
   } catch (error: any) {
     return NextResponse.json(
-      { error: `Payment Verification Exception: ${error.message}` },
+      { error: `Payment Verification Internal Error: ${error?.message || "Unknown error"}` },
       { status: 500 }
     );
   }

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatINR } from "@/lib/currency";
-import { mockListings } from "@/lib/data/mockCatalogue";
+import { getAllListings } from "@/lib/catalogueService";
 import { safeImagePath } from "@/lib/images";
 import {
   Gavel,
@@ -22,7 +22,8 @@ import {
 } from "lucide-react";
 
 export default function LiveAuctionRoom() {
-  const lot = mockListings[2] || mockListings[0]; // Patek Philippe 2499 or Chola Bronze
+  const allListings = getAllListings();
+  const lot = allListings[2] || allListings[0]; // Patek Philippe 2499 or Chola Bronze
   const [currentBidPaisa, setCurrentBidPaisa] = useState(3800000000); // ₹3,80,00,000
   const [bidIncrementPaisa, setBidIncrementPaisa] = useState(50000000); // ₹50,00,000
   const [soundEnabled, setSoundEnabled] = useState(false);

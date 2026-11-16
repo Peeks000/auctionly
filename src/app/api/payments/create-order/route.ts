@@ -1,22 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createRazorpayOrder } from "@/lib/razorpay";
 import { calculateAuctionBreakdown } from "@/lib/currency";
-import { mockListings } from "@/lib/data/mockCatalogue";
+import { findListing } from "@/lib/catalogueService";
 import { saveOrder } from "@/lib/ordersStore";
+
+const CreateOrderSchema = z.object({
+  listingId: z.string().min(1, "listingId is required."),
+  orderType: z.enum(["buy_now", "auction_win"]).default("buy_now"),
+  buyerId: z.string().default("buyer_demo_user"),
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const { listingId, orderType = "buy_now", buyerId = "buyer_demo_user" } = await req.json();
+    const rawBody = await req.json();
+    const validation = CreateOrderSchema.safeParse(rawBody);
 
-    if (!listingId) {
-      return NextResponse.json(
-        { error: "Bad Request: listingId is required." },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      const issues = validation.error.issues.map((i) => i.message).join(", ");
+      return NextResponse.json({ error: `Bad Request: ${issues}` }, { status: 400 });
     }
 
+    const { listingId, orderType, buyerId } = validation.data;
+
     // Locate listing in catalogue
-    const listing = mockListings.find((l) => l.id === listingId || l.slug === listingId);
+    const listing = findListing(listingId);
 
     if (!listing) {
       return NextResponse.json(
@@ -94,7 +102,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     return NextResponse.json(
-      { error: `Order Creation Failed: ${error.message}` },
+      { error: `Order Creation Failed: ${error?.message || "Internal server error"}` },
       { status: 500 }
     );
   }

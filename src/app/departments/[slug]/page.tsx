@@ -4,20 +4,20 @@ import React from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import LotCard from "@/components/catalogue/LotCard";
-import { mockCategories, mockListings } from "@/lib/data/mockCatalogue";
+import { getCategoryBySlug, getListingsByDepartment } from "@/lib/catalogueService";
 import { ChevronRight, ShieldCheck, Award, ArrowLeft } from "lucide-react";
 
 export default function DepartmentDetailPage() {
   const params = useParams();
   const slug = params?.slug as string;
 
-  const department = mockCategories.find((c) => c.slug === slug);
+  const department = getCategoryBySlug(slug);
 
   if (!department) {
     notFound();
   }
 
-  const departmentLots = mockListings.filter((l) => l.category_id === department.id);
+  const departmentLots = getListingsByDepartment(slug);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col gap-10">

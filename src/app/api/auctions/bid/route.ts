@@ -1,6 +1,22 @@
 import { NextResponse } from "next/server";
-import { mockListings } from "@/lib/data/mockCatalogue";
+import { z } from "zod";
+import { findListing } from "@/lib/catalogueService";
 import { formatINR } from "@/lib/currency";
+
+const PlaceBidSchema = z
+  .object({
+    listingId: z.string().optional(),
+    slug: z.string().optional(),
+    bidAmountPaisa: z
+      .number({ invalid_type_error: "Bid amount must be a number." })
+      .int("Bid amount in paisa must be an integer.")
+      .positive("Bid amount must be greater than zero."),
+    bidderId: z.string().optional(),
+    bidderName: z.string().optional(),
+  })
+  .refine((data) => data.listingId || data.slug, {
+    message: "Either listingId or slug must be specified.",
+  });
 
 // In-memory runtime auction state map to preserve live bids across calls in session
 const liveAuctionsState: Record<
@@ -16,20 +32,19 @@ const liveAuctionsState: Record<
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { listingId, slug, bidAmountPaisa, bidderId, bidderName } = body;
+    const rawBody = await request.json();
+    const validation = PlaceBidSchema.safeParse(rawBody);
 
-    if (!bidAmountPaisa || typeof bidAmountPaisa !== "number" || bidAmountPaisa <= 0) {
-      return NextResponse.json(
-        { error: "Invalid bid amount specified." },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      const issues = validation.error.issues.map((i) => i.message).join(", ");
+      return NextResponse.json({ error: issues }, { status: 400 });
     }
 
-    // Authoritative lookup
-    const listing = mockListings.find(
-      (l) => l.id === listingId || (slug && l.slug === slug)
-    );
+    const { listingId, slug, bidAmountPaisa, bidderName } = validation.data;
+
+    // Authoritative lookup via catalogueService
+    const targetKey = listingId || slug || "";
+    const listing = findListing(targetKey);
 
     if (!listing) {
       return NextResponse.json(

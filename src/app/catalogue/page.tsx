@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import LotCard from "@/components/catalogue/LotCard";
-import { mockListings, mockCategories } from "@/lib/data/mockCatalogue";
+import { queryListings, getCategories, getTotalListingsCount } from "@/lib/catalogueService";
 import { Search, Filter, SlidersHorizontal, ArrowUpDown, X, Sparkles } from "lucide-react";
 
 export default function CataloguePage() {
@@ -11,46 +11,17 @@ export default function CataloguePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"ending" | "price_desc" | "price_asc">("ending");
 
-  // Filtering
-  const filteredListings = useMemo(() => {
-    return mockListings.filter((listing) => {
-      if (selectedCategory !== "all" && listing.category_id !== selectedCategory) {
-        return false;
-      }
-      if (selectedFormat !== "all" && listing.sale_format !== selectedFormat) {
-        return false;
-      }
-      if (searchQuery.trim() !== "") {
-        const q = searchQuery.toLowerCase();
-        const matchTitle = listing.title.toLowerCase().includes(q);
-        const matchDesc = listing.short_description.toLowerCase().includes(q);
-        const matchMaker = listing.artist_or_maker?.toLowerCase().includes(q);
-        const matchPeriod = listing.origin_period?.toLowerCase().includes(q);
-        if (!matchTitle && !matchDesc && !matchMaker && !matchPeriod) return false;
-      }
-      return true;
-    });
-  }, [selectedCategory, selectedFormat, searchQuery]);
+  const categories = useMemo(() => getCategories(), []);
 
-  // Authoritative Sorting
+  // Filter & Sort using centralized catalogue service
   const sortedListings = useMemo(() => {
-    return [...filteredListings].sort((a, b) => {
-      if (sortBy === "ending") {
-        const timeA = a.auction?.end_time ? new Date(a.auction.end_time).getTime() : Infinity;
-        const timeB = b.auction?.end_time ? new Date(b.auction.end_time).getTime() : Infinity;
-        return timeA - timeB;
-      }
-      const priceA = a.buy_now_price || a.auction?.current_price || a.starting_price || 0;
-      const priceB = b.buy_now_price || b.auction?.current_price || b.starting_price || 0;
-      if (sortBy === "price_desc") {
-        return priceB - priceA;
-      }
-      if (sortBy === "price_asc") {
-        return priceA - priceB;
-      }
-      return 0;
+    return queryListings({
+      categoryId: selectedCategory,
+      saleFormat: selectedFormat,
+      searchQuery,
+      sortBy,
     });
-  }, [filteredListings, sortBy]);
+  }, [selectedCategory, selectedFormat, searchQuery, sortBy]);
 
   const hasActiveFilters =
     selectedCategory !== "all" || selectedFormat !== "all" || searchQuery.trim() !== "" || sortBy !== "ending";
@@ -112,7 +83,7 @@ export default function CataloguePage() {
               aria-label="Filter by department"
             >
               <option value="all">All Departments (7)</option>
-              {mockCategories.map((c) => (
+              {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -151,7 +122,7 @@ export default function CataloguePage() {
         {/* Results Metadata & Clear Action */}
         <div className="flex items-center justify-between text-[11px] text-luxury-muted border-t border-luxury-subtle/30 pt-3">
           <div className="flex items-center gap-2">
-            <span>Showing <strong className="text-luxury-ivory">{sortedListings.length}</strong> of {mockListings.length} curated lots</span>
+            <span>Showing <strong className="text-luxury-ivory">{sortedListings.length}</strong> of {getTotalListingsCount()} curated lots</span>
             {hasActiveFilters && (
               <span className="text-luxury-gold font-medium">• Filters Applied</span>
             )}

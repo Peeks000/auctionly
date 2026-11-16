@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { LotCard } from "@/components/catalogue/LotCard";
-import { mockListings } from "@/lib/data/mockCatalogue";
+import { getAllListings } from "@/lib/catalogueService";
 import { Listing, Auction } from "@/types";
 import {
   Bookmark,
@@ -29,7 +29,7 @@ export default function WatchlistPage() {
       const ids: string[] = saved ? JSON.parse(saved) : [];
       setWatchlistIds(ids);
 
-      const matched = mockListings.filter((l) => ids.includes(l.id));
+      const matched = getAllListings().filter((l) => ids.includes(l.id));
       setSavedLots(matched);
     } catch {
       setSavedLots([]);
