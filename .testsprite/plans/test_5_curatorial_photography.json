@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/TestSprite/testsprite-cli/v0.16.0/schemas/plan.schema.json",
+  "projectId": "4e8d0122-f7df-45da-9807-0de6b738b4e0",
+  "type": "frontend",
+  "name": "Curatorial Museum Photography and 3D Model Synchronization",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Navigate to /lot/mughal-basra-pearl-emerald-sautoir-1840 and wait for the detail page to load"
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the Curatorial Photography tab button is present"
+    },
+    {
+      "type": "action",
+      "description": "Click on the Curatorial Photography tab button"
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the Curatorial Specimen image is displayed with high-resolution photography"
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the 6 synchronized curatorial artifact selector thumbnails are present"
+    }
+  ]
+}
