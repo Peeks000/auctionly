@@ -116,9 +116,8 @@ export const CinematicHeroExperience: React.FC = () => {
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(-1);
   const activeChapterRef = useRef<number>(-1);
 
-  // Ambient Idle Atmosphere Refs
+  // Opening Marble Bust Scene Ambient Idle Atmosphere Refs
   const ambientLayerRef = useRef<HTMLDivElement>(null);
-  const bustHighlightRef = useRef<HTMLDivElement>(null);
   const dustCanvasRef = useRef<HTMLCanvasElement>(null);
   const isIdleRef = useRef(false);
   const isHeroVisibleRef = useRef(true);
@@ -373,23 +372,15 @@ export const CinematicHeroExperience: React.FC = () => {
       }
     }
 
-    // 3. Sculpture Illumination Progress Binding (Strictly visible when bust is in view: progress <= 0.14)
+    // 3. Opening Scene Ambient Atmosphere Binding
+    // As soon as the transition from the opening bust scene begins (progress > 0.03), fade out every ambient effect immediately
     currentProgressRef.current = progress;
-    const bustHighlight = bustHighlightRef.current;
-    if (bustHighlight) {
-      if (progress <= 0.14) {
-        const zoomT = progress / 0.14;
-        const scale = 1.0 + Math.pow(zoomT, 1.4) * 2.25;
-        let bustOpacity = 1;
-        if (zoomT > 0.7) {
-          bustOpacity = Math.max(0, 1 - (zoomT - 0.7) / 0.3);
-        }
-        bustHighlight.style.display = "block";
-        bustHighlight.style.opacity = bustOpacity.toFixed(3);
-        bustHighlight.style.transform = `scale(${scale.toFixed(4)})`;
-      } else {
-        bustHighlight.style.display = "none";
-        bustHighlight.style.opacity = "0";
+    const ambient = ambientLayerRef.current;
+    if (ambient) {
+      if (progress > 0.03) {
+        ambient.style.opacity = "0";
+        ambient.style.transition = "opacity 0.25s ease-out";
+        stopDustLoopRef.current?.();
       }
     }
   }, []);
@@ -522,43 +513,41 @@ export const CinematicHeroExperience: React.FC = () => {
     });
   };
 
-  // Museum Atmospheric Dust Initialization Helper
+  // Museum Atmospheric Dust Initialization Helper (Strictly 20 clearly visible particles in sunlight)
   const initDustParticles = (width: number, height: number): DustParticle[] => {
     const isMobile = width < 768;
-    const count = isMobile ? 15 : 35;
+    const count = isMobile ? 12 : 20;
     const particles: DustParticle[] = [];
     const colors = [
-      "rgba(247, 243, 235,", // warm white
-      "rgba(255, 248, 225,", // soft ivory
-      "rgba(212, 175, 55,",  // champagne gold
-      "rgba(198, 166, 106,", // luxury bronze
+      "rgba(255, 248, 235,", // warm white sunlight
+      "rgba(255, 240, 215,", // rich champagne
+      "rgba(235, 195, 115,", // antique museum gold
+      "rgba(215, 175, 95,",  // deep golden mote
     ];
 
-    for (let i = 0; i < count; i++) {
-      // Concentrate particles along diagonal sunbeam swath (top-right toward center/bottom-left)
-      const diagonalT = Math.random();
-      const spreadX = (Math.random() - 0.5) * width * 0.45;
-      const spreadY = (Math.random() - 0.5) * height * 0.35;
-      const startX = width * (0.85 - diagonalT * 0.6) + spreadX;
-      const startY = height * (0.05 + diagonalT * 0.75) + spreadY;
+    const minX = width * 0.45;
+    const maxX = width * 0.94;
+    const minY = height * 0.06;
+    const maxY = height * 0.68;
 
+    for (let i = 0; i < count; i++) {
       particles.push({
-        x: Math.max(0, Math.min(width, startX)),
-        y: Math.max(0, Math.min(height, startY)),
-        radius: 0.6 + Math.random() * 1.3,
-        baseAlpha: 0.15 + Math.random() * 0.35,
-        alpha: 0.2,
-        vx: -0.06 - Math.random() * 0.12,
-        vy: -0.10 + Math.random() * 0.22,
+        x: minX + Math.random() * (maxX - minX),
+        y: minY + Math.random() * (maxY - minY),
+        radius: 1.8 + Math.random() * 1.6, // clearly visible 1.8px - 3.4px
+        baseAlpha: 0.50 + Math.random() * 0.35, // clearly visible against dark background
+        alpha: 0.6,
+        vx: -0.15 - Math.random() * 0.22, // slow natural drift away from upper-right window
+        vy: -0.16 + Math.random() * 0.28, // gentle vertical suspension
         pulsePhase: Math.random() * Math.PI * 2,
-        pulseSpeed: 0.015 + Math.random() * 0.02,
+        pulseSpeed: 0.02 + Math.random() * 0.025,
         color: colors[Math.floor(Math.random() * colors.length)],
       });
     }
     return particles;
   };
 
-  // 1. Dust Particle RAF Simulation Engine (Active ONLY when Idle and Hero is Visible)
+  // 1. Dust Particle RAF Simulation Engine (Active ONLY when Idle and in Opening Marble Bust Scene)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -568,7 +557,11 @@ export const CinematicHeroExperience: React.FC = () => {
       isReducedMotionRef.current = e.matches;
       if (e.matches) {
         stopDustLoopRef.current?.();
-      } else if (isIdleRef.current && isHeroVisibleRef.current) {
+      } else if (
+        isIdleRef.current &&
+        isHeroVisibleRef.current &&
+        currentProgressRef.current <= 0.03
+      ) {
         startDustLoopRef.current?.();
       }
     };
@@ -593,8 +586,8 @@ export const CinematicHeroExperience: React.FC = () => {
       if (
         !isIdleRef.current ||
         !isHeroVisibleRef.current ||
-        isReducedMotionRef.current ||
-        document.hidden
+        document.hidden ||
+        currentProgressRef.current > 0.03
       ) {
         dustAnimIdRef.current = null;
         return;
@@ -604,6 +597,11 @@ export const CinematicHeroExperience: React.FC = () => {
       if (ctx) {
         ctx.clearRect(0, 0, width, height);
 
+        const minX = width * 0.45;
+        const maxX = width * 0.94;
+        const minY = height * 0.06;
+        const maxY = height * 0.68;
+
         for (let i = 0; i < particles.length; i++) {
           const p = particles[i];
           p.x += p.vx;
@@ -611,16 +609,26 @@ export const CinematicHeroExperience: React.FC = () => {
           p.pulsePhase += p.pulseSpeed;
 
           const pulse = (Math.sin(p.pulsePhase) + 1) * 0.5;
-          p.alpha = p.baseAlpha * (0.6 + 0.4 * pulse);
+          p.alpha = p.baseAlpha * (0.65 + 0.35 * pulse);
 
-          if (p.x < -10) p.x = width + 5;
-          if (p.x > width + 10) p.x = -5;
-          if (p.y < -10) p.y = height + 5;
-          if (p.y > height + 10) p.y = -5;
+          if (p.x < minX) {
+            p.x = maxX - Math.random() * 15;
+            p.y = minY + Math.random() * (maxY - minY) * 0.6;
+          }
+          if (p.x > maxX) p.x = minX + 5;
+          if (p.y < minY) p.y = maxY - 5;
+          if (p.y > maxY) p.y = minY + 5;
 
+          // Glowing dust mote with bright core and soft feathered halo
+          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius * 2);
+          grad.addColorStop(0, `rgba(255, 252, 240, ${p.alpha.toFixed(3)})`);
+          grad.addColorStop(0.4, `${p.color} ${(p.alpha * 0.85).toFixed(3)})`);
+          grad.addColorStop(0.75, `${p.color} ${(p.alpha * 0.3).toFixed(3)})`);
+          grad.addColorStop(1, `${p.color} 0)`);
+
+          ctx.fillStyle = grad;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.fillStyle = `${p.color} ${p.alpha.toFixed(3)})`;
+          ctx.arc(p.x, p.y, p.radius * 2, 0, Math.PI * 2);
           ctx.fill();
         }
       }
@@ -629,7 +637,11 @@ export const CinematicHeroExperience: React.FC = () => {
     };
 
     startDustLoopRef.current = () => {
-      if (!dustAnimIdRef.current && !isReducedMotionRef.current && !document.hidden) {
+      if (
+        !dustAnimIdRef.current &&
+        !document.hidden &&
+        currentProgressRef.current <= 0.03
+      ) {
         dustAnimIdRef.current = requestAnimationFrame(animateDust);
       }
     };
@@ -651,7 +663,7 @@ export const CinematicHeroExperience: React.FC = () => {
     };
   }, []);
 
-  // 2. Scroll-Aware Idle State Detection & Lifecycle Engine
+  // 2. Scroll-Aware Idle State Detection & Lifecycle Engine (Strictly for Opening Marble Bust Scene)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -661,13 +673,14 @@ export const CinematicHeroExperience: React.FC = () => {
 
       const layer = ambientLayerRef.current;
       if (layer) {
-        if (idle && isHeroVisibleRef.current) {
+        const isBustScene = currentProgressRef.current <= 0.03;
+        if (idle && isHeroVisibleRef.current && isBustScene) {
           layer.style.opacity = "1";
           layer.style.transition = "opacity 0.8s ease-out";
           startDustLoopRef.current?.();
         } else {
           layer.style.opacity = "0";
-          layer.style.transition = "opacity 0.35s ease-out";
+          layer.style.transition = "opacity 0.25s ease-out";
           stopDustLoopRef.current?.();
         }
       }
@@ -681,9 +694,9 @@ export const CinematicHeroExperience: React.FC = () => {
         window.clearTimeout(scrollDebounceTimerRef.current);
       }
 
-      // STATE B: 600ms debounce of inactivity enters Idle atmosphere
+      // STATE B: 600ms debounce of inactivity enters Idle atmosphere ONLY IF in opening bust scene (progress <= 0.03)
       scrollDebounceTimerRef.current = window.setTimeout(() => {
-        if (isHeroVisibleRef.current) {
+        if (isHeroVisibleRef.current && currentProgressRef.current <= 0.03) {
           setIdleState(true);
         }
       }, 600);
@@ -693,7 +706,7 @@ export const CinematicHeroExperience: React.FC = () => {
 
     // Initial load idle trigger
     const initialTimer = window.setTimeout(() => {
-      if (isHeroVisibleRef.current) {
+      if (isHeroVisibleRef.current && currentProgressRef.current <= 0.03) {
         setIdleState(true);
       }
     }, 700);
@@ -713,7 +726,7 @@ export const CinematicHeroExperience: React.FC = () => {
               window.clearTimeout(scrollDebounceTimerRef.current);
             }
             scrollDebounceTimerRef.current = window.setTimeout(() => {
-              if (isHeroVisibleRef.current) {
+              if (isHeroVisibleRef.current && currentProgressRef.current <= 0.03) {
                 setIdleState(true);
               }
             }, 600);
@@ -728,7 +741,11 @@ export const CinematicHeroExperience: React.FC = () => {
     const onVisibilityChange = () => {
       if (document.hidden) {
         stopDustLoopRef.current?.();
-      } else if (isIdleRef.current && isHeroVisibleRef.current) {
+      } else if (
+        isIdleRef.current &&
+        isHeroVisibleRef.current &&
+        currentProgressRef.current <= 0.03
+      ) {
         startDustLoopRef.current?.();
       }
     };
@@ -796,6 +813,108 @@ export const CinematicHeroExperience: React.FC = () => {
             />
           </div>
 
+          {/* ====================================================================
+              OPENING MARBLE BUST IDLE ATMOSPHERE SYSTEM
+              - Strictly scoped INSIDE opening bust scene visual container
+              - Activates ONLY when idle in opening scene (progress <= 0.03)
+              - 100% disabled & invisible on second scene, crown, globe, and library
+             ==================================================================== */}
+          <div
+            ref={ambientLayerRef}
+            id="bust-scene-ambient-atmosphere"
+            className="absolute inset-0 z-[2] pointer-events-none overflow-hidden transition-opacity duration-700 ease-out"
+            style={{ opacity: 0 }}
+            aria-hidden="true"
+          >
+            {/* EFFECT 1: Moving Volumetric Sun Rays (Animate existing upper-right sunlight) */}
+            <div
+              id="ambient-volumetric-sunbeams"
+              className="absolute inset-0 pointer-events-none overflow-hidden"
+              style={{
+                transformOrigin: "88% 8%",
+                animation: "sunbeamDirectionalSweep 10s ease-in-out infinite alternate",
+              }}
+            >
+              {/* Main Beam Traveling Luminous Highlight (8-12s Noticeable Movement) */}
+              <div
+                className="absolute -top-10 -right-10 w-[130%] h-[140%] pointer-events-none"
+                style={{
+                  background:
+                    "linear-gradient(136deg, rgba(255, 252, 245, 0.45) 0%, rgba(255, 248, 225, 0.30) 25%, rgba(212, 175, 55, 0.16) 55%, transparent 80%)",
+                  clipPath: "polygon(76% 0%, 94% 0%, 54% 100%, 28% 100%)",
+                  filter: "blur(20px)",
+                  mixBlendMode: "screen",
+                  animation: "sunbeamHighlightTravel 9s ease-in-out infinite alternate",
+                }}
+              />
+
+              {/* Upper-right clerestory natural window glow aperture */}
+              <div
+                className="absolute top-0 right-0 w-[50vw] h-[50vh] pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at 88% 8%, rgba(255, 250, 235, 0.38) 0%, rgba(212, 175, 55, 0.15) 40%, transparent 72%)",
+                  filter: "blur(30px)",
+                  mixBlendMode: "screen",
+                }}
+              />
+            </div>
+
+            {/* EFFECT 2: Floating Museum Dust Particles (18-22 clearly visible glowing particles) */}
+            <canvas
+              ref={dustCanvasRef}
+              id="ambient-museum-dust"
+              className="absolute inset-0 w-full h-full pointer-events-none"
+            />
+
+            {/* EFFECT 3: Subtle Sculpture Illumination (Preserves marble texture & shadows) */}
+            <div
+              id="bust-sculpture-illumination"
+              className="absolute inset-0 pointer-events-none overflow-hidden"
+              style={{
+                animation: "bustSculptureBreathing 10s ease-in-out infinite alternate",
+              }}
+            >
+              {/* Hair, temple, right forehead sunlight touch */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle 220px at 52.0% 36.0%, rgba(255, 250, 238, 0.30) 0%, rgba(212, 175, 55, 0.12) 45%, transparent 75%)",
+                  mixBlendMode: "soft-light",
+                }}
+              />
+              {/* Right cheek & shoulder ambient glow */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 300px 180px at 51.5% 52.0%, rgba(212, 175, 55, 0.20) 0%, rgba(212, 175, 55, 0.05) 55%, transparent 80%)",
+                  mixBlendMode: "soft-light",
+                }}
+              />
+            </div>
+
+            {/* EFFECT 4: Moving Marble Floor Reflections */}
+            <div
+              id="ambient-floor-reflections"
+              className="absolute bottom-0 right-0 w-[70%] h-24 sm:h-32 pointer-events-none overflow-hidden"
+              style={{
+                animation: "floorSunbeamShimmer 10s ease-in-out infinite alternate",
+              }}
+            >
+              <div
+                className="w-full h-full pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 65% 55% at 65% 90%, rgba(212, 175, 55, 0.24) 0%, rgba(198, 166, 106, 0.08) 50%, transparent 80%)",
+                  filter: "blur(14px)",
+                  mixBlendMode: "screen",
+                }}
+              />
+            </div>
+          </div>
+
           {/* Edge Vignettes for Gallery Ambience */}
           <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#000000]/80 via-[#000000]/40 to-transparent" />
           <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#000000]/85 via-[#000000]/45 to-transparent" />
@@ -853,121 +972,6 @@ export const CinematicHeroExperience: React.FC = () => {
           <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#000000]/85 via-[#000000]/45 to-transparent" />
           <div className="absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-[#000000]/60 to-transparent" />
           <div className="absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-[#000000]/60 to-transparent" />
-        </div>
-
-        {/* ====================================================================
-            AMBIENT IDLE ATMOSPHERE LAYER (z-[14], pointer-events-none)
-            - Activates ONLY in STATE B (idle / not scrolling)
-            - Fades out in STATE A (active scrolling)
-            - 100% pointer-events-none: Never blocks CTA buttons, audio or concierge
-           ==================================================================== */}
-        <div
-          ref={ambientLayerRef}
-          id="hero-ambient-atmosphere"
-          className="absolute inset-0 z-[14] pointer-events-none overflow-hidden transition-opacity duration-700 ease-out"
-          style={{ opacity: 0 }}
-          aria-hidden="true"
-        >
-          {/* EFFECT 1: Moving Volumetric Sun Rays (Upper-Right museum windows) */}
-          <div
-            id="ambient-volumetric-sunbeams"
-            className="absolute inset-0 pointer-events-none overflow-hidden"
-            style={{
-              transformOrigin: "85% 0%",
-              animation: "sunbeamDrift 26s ease-in-out infinite alternate",
-            }}
-          >
-            {/* Primary Broad Sunbeam Shaft */}
-            <div
-              className="absolute -top-1/4 -right-1/4 w-[140%] h-[150%] pointer-events-none"
-              style={{
-                background:
-                  "conic-gradient(from 215deg at 88% 0%, transparent 0deg, rgba(247,243,235,0.02) 8deg, rgba(255,248,225,0.18) 16deg, rgba(212,175,55,0.12) 24deg, rgba(212,175,55,0.03) 32deg, transparent 40deg)",
-                filter: "blur(28px)",
-                animation: "sunbeamShimmer 18s ease-in-out infinite alternate",
-              }}
-            />
-
-            {/* Secondary Focused Radiant Beam */}
-            <div
-              className="absolute -top-10 -right-10 w-[120%] h-[130%] pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(132deg, rgba(255,252,245,0.22) 0%, rgba(212,175,55,0.14) 28%, rgba(212,175,55,0.02) 65%, transparent 85%)",
-                clipPath: "polygon(78% 0%, 96% 0%, 42% 100%, 15% 100%)",
-                filter: "blur(22px)",
-              }}
-            />
-
-            {/* Tertiary Soft Window Glow Aperture */}
-            <div
-              className="absolute top-0 right-0 w-[55vw] h-[55vh] pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(ellipse at 92% 5%, rgba(255,250,235,0.25) 0%, rgba(212,175,55,0.10) 45%, transparent 75%)",
-                filter: "blur(35px)",
-              }}
-            />
-          </div>
-
-          {/* EFFECT 2: Floating Museum Dust Particles */}
-          <canvas
-            ref={dustCanvasRef}
-            id="ambient-museum-dust"
-            className="absolute inset-0 w-full h-full pointer-events-none"
-          />
-
-          {/* EFFECT 3: Subtle Sculpture Illumination (Marble Bust forehead, cheeks, shoulders)
-              Strictly visible when bust is in view: progress <= 0.14 */}
-          <div
-            ref={bustHighlightRef}
-            id="bust-sculpture-illumination"
-            className="absolute inset-0 pointer-events-none overflow-hidden transition-opacity duration-300"
-            style={{
-              transformOrigin: "50.5% 38%",
-              display: "block",
-              opacity: 1,
-            }}
-          >
-            {/* Forehead and Cheeks gentle warm luminance */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(circle 240px at 50.5% 37.5%, rgba(255,250,238,0.20) 0%, rgba(212,175,55,0.08) 50%, transparent 80%)",
-                mixBlendMode: "soft-light",
-                animation: "bustBreathingGlow 14s ease-in-out infinite alternate",
-              }}
-            />
-            {/* Shoulders and Collarbone soft ambient rim */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(ellipse 340px 180px at 50.5% 54%, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.04) 55%, transparent 80%)",
-                mixBlendMode: "soft-light",
-              }}
-            />
-          </div>
-
-          {/* EFFECT 4: Moving Marble Floor Reflections */}
-          <div
-            id="ambient-floor-reflections"
-            className="absolute bottom-0 inset-x-0 h-28 sm:h-36 pointer-events-none overflow-hidden"
-            style={{
-              animation: "floorReflectionShimmer 22s ease-in-out infinite alternate",
-            }}
-          >
-            <div
-              className="w-[120%] -ml-[10%] h-full pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(ellipse 70% 60% at 55% 85%, rgba(212,175,55,0.14) 0%, rgba(198,166,106,0.06) 45%, transparent 80%)",
-                filter: "blur(18px)",
-                mixBlendMode: "screen",
-              }}
-            />
-          </div>
         </div>
 
         {/* Global Dark Vignette Overlay for Crisp Readability across all chapters */}
