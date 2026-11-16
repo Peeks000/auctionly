@@ -201,6 +201,8 @@ export default function LotDetailPage() {
             primaryImageUrl={listing.primary_image_url}
             galleryUrls={listing.gallery_image_urls}
             title={listing.title}
+            slug={listing.slug}
+            listingId={listing.id}
           />
 
           {/* Department Curatorial Badges */}

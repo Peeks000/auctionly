@@ -6,6 +6,7 @@ import MonogramA from "@/components/brand/MonogramA";
 import CinematicHeroExperience from "@/components/experience/CinematicHeroExperience";
 import DepartmentsCarousel3D from "@/components/departments/DepartmentsCarousel3D";
 import ScrollTriggerEnhancer from "@/components/experience/ScrollTriggerEnhancer";
+import { safeImagePath } from "@/lib/images";
 import { mockListings } from "@/lib/data/mockCatalogue";
 import {
   Gavel,
@@ -115,16 +116,18 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="lg:col-span-5 relative h-72 rounded-sm overflow-hidden border border-luxury-champagne/20">
+            <div className="lg:col-span-5 relative h-72 rounded-sm overflow-hidden border border-luxury-champagne/20 bg-[#080706] flex items-center justify-center p-3">
               <Image
-                src="https://images.unsplash.com/photo-1544967082-d9d25d867d66?auto=format&fit=crop&w=1200&q=80"
-                alt="Marquee Lot Somaskanda Bronze"
+                src={safeImagePath("/images/Antique Bronze Somaskanda Sculpture.png")}
+                alt="Chola Dynasty Bronze Somaskanda Sculpture (11th Century CE)"
                 fill
-                className="object-cover"
+                unoptimized
+                sizes="(max-width: 1024px) 100vw, 40vw"
+                className="object-contain p-2 drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-luxury-black via-transparent to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4">
-                <span className="text-[10px] tracking-widest uppercase text-luxury-champagne/80 block">Lot 14 Marquee</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-luxury-black via-transparent to-transparent pointer-events-none" />
+              <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
+                <span className="text-[10px] tracking-widest uppercase text-luxury-gold block font-mono">Lot 14 Marquee • Curatorial Specimen</span>
                 <span className="font-serif text-sm text-luxury-ivory font-medium">Chola Dynasty Somaskanda Bronze (11th Century)</span>
               </div>
             </div>

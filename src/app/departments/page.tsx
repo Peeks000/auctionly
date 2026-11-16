@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { safeImagePath } from "@/lib/images";
 import { mockCategories, mockListings } from "@/lib/data/mockCatalogue";
 import { formatINR } from "@/lib/currency";
 import { ArrowRight, ChevronRight, ShieldCheck, Layers } from "lucide-react";
@@ -43,7 +44,7 @@ export default function DepartmentsOverviewPage() {
                 {sampleLot && (
                   <div className="mt-5 pt-4 border-t border-luxury-subtle/30 flex items-center gap-3">
                     <div className="w-12 h-12 rounded-sm overflow-hidden bg-luxury-black shrink-0 relative">
-                      <img src={sampleLot.primary_image_url} alt={sampleLot.title} className="w-full h-full object-cover" />
+                      <img src={safeImagePath(sampleLot.primary_image_url)} alt={sampleLot.title} className="w-full h-full object-cover" />
                     </div>
                     <div className="truncate">
                       <span className="text-[10px] uppercase tracking-wider text-luxury-muted block">Marquee Lot</span>

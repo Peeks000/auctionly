@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { formatINR } from "@/lib/currency";
 import { Listing, Auction } from "@/types";
 import { Clock, ShieldCheck, Bookmark, Gavel, Eye, Sparkles } from "lucide-react";
+import { safeImagePath } from "@/lib/images";
 
 // Dynamically import 3D preview with SSR disabled for optimal client-side WebGL lifecycle
 const LotCard3DPreview = dynamic(() => import("@/components/three/LotCard3DPreview"), {
@@ -156,11 +157,12 @@ export const LotCard: React.FC<LotCardProps> = ({ listing, priority = false }) =
           ) : (
             <Link href={`/lot/${listing.slug}`} tabIndex={-1} className="block w-full h-full">
               <Image
-                src={listing.primary_image_url}
+                src={safeImagePath(listing.primary_image_url)}
                 alt={listing.title}
                 fill
+                unoptimized
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                className="object-contain p-3 select-none drop-shadow-xl group-hover:scale-105 transition-transform duration-700 ease-out"
                 priority={priority}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-luxury-black via-transparent to-black/30 opacity-70 group-hover:opacity-40 transition-opacity" />

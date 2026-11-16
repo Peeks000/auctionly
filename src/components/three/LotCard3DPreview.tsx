@@ -5,6 +5,7 @@ import Image from "next/image";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { Sparkles, Rotate3D } from "lucide-react";
+import { safeImagePath } from "@/lib/images";
 
 interface LotCard3DPreviewProps {
   modelUrl: string;
@@ -486,14 +487,15 @@ export const LotCard3DPreview: React.FC<LotCard3DPreviewProps> = ({
         }`}
       >
         <Image
-          src={fallbackImageUrl}
+          src={safeImagePath(fallbackImageUrl)}
           alt={title}
           fill
+          unoptimized
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+          className="object-contain p-3 select-none drop-shadow-xl group-hover:scale-105 transition-transform duration-700 ease-out"
           priority={priority}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-luxury-black via-transparent to-black/30 opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-t from-luxury-black/80 via-transparent to-black/20 pointer-events-none" />
       </div>
 
       {/* 3D WebGL Canvas */}

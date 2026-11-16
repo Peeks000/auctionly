@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatINR } from "@/lib/currency";
 import { mockListings } from "@/lib/data/mockCatalogue";
+import { safeImagePath } from "@/lib/images";
 import {
   Gavel,
   Radio,
@@ -121,9 +122,10 @@ export default function LiveAuctionRoom() {
             <div className="relative z-10 flex flex-col items-center text-center p-6 max-w-lg">
               <div className="relative w-36 h-36 rounded-full overflow-hidden border-2 border-luxury-gold p-1 mb-4 shadow-[0_0_30px_rgba(198,166,106,0.3)]">
                 <Image
-                  src={lot.primary_image_url || "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"}
+                  src={safeImagePath(lot.primary_image_url) || "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"}
                   alt="Auctioneer Presentation Lot"
                   fill
+                  unoptimized
                   className="object-cover"
                 />
               </div>
