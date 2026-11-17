@@ -94,6 +94,7 @@ export const CinematicHeroExperience: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Hero interactive layers
   const heroBackdropRef = useRef<HTMLDivElement>(null);
@@ -488,6 +489,14 @@ export const CinematicHeroExperience: React.FC = () => {
 
           drawFrame(frameIndex);
           updateChapterVisuals(p);
+
+          // Synchronize 60 FPS video playback position with scroll progression
+          if (videoRef.current && Number.isFinite(videoRef.current.duration) && videoRef.current.duration > 0) {
+            const targetTime = p * videoRef.current.duration;
+            if (Math.abs(videoRef.current.currentTime - targetTime) > 0.05) {
+              videoRef.current.currentTime = targetTime;
+            }
+          }
         },
       });
     }, container);
@@ -778,12 +787,26 @@ export const CinematicHeroExperience: React.FC = () => {
         className="sticky top-0 w-full h-[100svh] min-h-[680px] max-h-[1200px] overflow-hidden flex flex-col justify-between items-center bg-[#000000] z-20 select-none border-b border-luxury-champagne/15"
       >
         {/* ====================================================================
-            LAYER 0: High-Performance Canvas Frame Sequence (0ms Seek Lag)
+            LAYER 0: 60 FPS Background Video & High-Performance Canvas Stage
            ==================================================================== */}
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden pointer-events-none">
+          <video
+            ref={videoRef}
+            src="/videos/Generated_video_60fps.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+            style={{
+              filter: "contrast(1.04) brightness(0.96)",
+            }}
+          />
           <canvas
             ref={canvasRef}
-            className="w-full h-full object-cover object-center pointer-events-none select-none"
+            className="relative w-full h-full object-cover object-center pointer-events-none select-none"
             style={{
               filter: "contrast(1.04) brightness(0.96)",
             }}
