@@ -37,16 +37,16 @@ export const CustomCursor: React.FC = () => {
         dotRef.current.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
       }
 
-      // Check hover targets
+      // Check hover targets (guarded to prevent redundant state dispatches)
       const target = e.target as HTMLElement | null;
       if (target) {
-        const interactive = target.closest(
+        const interactive = !!target.closest(
           "a, button, [role='button'], input, textarea, select, .card-luxury, [data-cursor]"
         );
-        setIsHovered(!!interactive);
+        setIsHovered((prev) => (prev !== interactive ? interactive : prev));
 
-        const customText = target.closest("[data-cursor]")?.getAttribute("data-cursor");
-        setCursorText(customText || null);
+        const customText = target.closest("[data-cursor]")?.getAttribute("data-cursor") || null;
+        setCursorText((prev) => (prev !== customText ? customText : prev));
       }
     };
 

@@ -20,10 +20,7 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// 200 total extracted WebP frames covering 0.0s to 10.02s
-const TOTAL_FRAMES = 200;
-const getFramePath = (index: number) =>
-  `/frames/frame_${String(index).padStart(3, "0")}.webp`;
+
 
 interface ChapterConfig {
   id: string;
@@ -93,8 +90,13 @@ const CHAPTERS: ChapterConfig[] = [
 export const CinematicHeroExperience: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // High-performance RAF seeking scheduler refs
+  const targetTimeRef = useRef<number>(0);
+  const pendingTimeRef = useRef<number | null>(null);
+  const isSeekingRef = useRef<boolean>(false);
+  const rafIdRef = useRef<number | null>(null);
 
   // Hero interactive layers
   const heroBackdropRef = useRef<HTMLDivElement>(null);
@@ -106,11 +108,6 @@ export const CinematicHeroExperience: React.FC = () => {
   const heroTitleRef = useRef<HTMLDivElement>(null);
   const heroCtaRef = useRef<HTMLDivElement>(null);
   const heroTrustRef = useRef<HTMLDivElement>(null);
-
-  // Progressive frame image cache
-  const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(TOTAL_FRAMES).fill(null));
-  const lastDrawnIndexRef = useRef<number>(-1);
-  const [isCanvasLoaded, setIsCanvasLoaded] = useState(false);
 
   // Chapter DOM elements for 60fps direct manipulation
   const chapterDomRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -222,37 +219,7 @@ export const CinematicHeroExperience: React.FC = () => {
     return () => cancelAnimationFrame(animId);
   }, []);
 
-  // Draw frame on canvas with nearest neighbor fallback for 0ms lag
-  const drawFrame = useCallback((index: number) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
 
-    let img = imagesRef.current[index];
-    if (!img || !img.complete || img.naturalWidth === 0) {
-      for (let offset = 1; offset < TOTAL_FRAMES; offset++) {
-        const prev = imagesRef.current[index - offset];
-        if (prev && prev.complete && prev.naturalWidth > 0) {
-          img = prev;
-          break;
-        }
-        const next = imagesRef.current[index + offset];
-        if (next && next.complete && next.naturalWidth > 0) {
-          img = next;
-          break;
-        }
-      }
-    }
-
-    if (img && img.complete && img.naturalWidth > 0) {
-      if (lastDrawnIndexRef.current === index && img === imagesRef.current[index]) {
-        return;
-      }
-      lastDrawnIndexRef.current = index;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    }
-  }, []);
 
   // Update Chapter DOM elements directly without triggering React re-render storms
   const updateChapterVisuals = useCallback((progress: number) => {
@@ -386,71 +353,52 @@ export const CinematicHeroExperience: React.FC = () => {
     }
   }, []);
 
-  // Progressive Frame Preloading Engine
+  // High-Performance Video Scrub & Seek Scheduler Lifecycle
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    const video = videoRef.current;
+    if (!video) return;
 
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.width = 1280;
-      canvas.height = 720;
-    }
-
-    let isMounted = true;
-
-    // 1. High priority: Preload Frame 0 immediately
-    const firstImg = new window.Image();
-    firstImg.src = getFramePath(0);
-    firstImg.onload = () => {
-      if (!isMounted) return;
-      imagesRef.current[0] = firstImg;
-      drawFrame(0);
-      setIsCanvasLoaded(true);
+    const onSeeking = () => {
+      isSeekingRef.current = true;
     };
 
-    // 2. Preload opening eye zoom sequence (frames 1 to 30)
-    for (let i = 1; i < Math.min(30, TOTAL_FRAMES); i++) {
-      const img = new window.Image();
-      img.src = getFramePath(i);
-      img.onload = () => {
-        if (isMounted) imagesRef.current[i] = img;
-      };
-    }
-
-    // 3. Background progressive worker for remaining gallery frames
-    let nextIndex = 30;
-    const batchSize = 15;
-
-    const loadNextBatch = () => {
-      if (!isMounted || nextIndex >= TOTAL_FRAMES) return;
-      const end = Math.min(nextIndex + batchSize, TOTAL_FRAMES);
-      for (let i = nextIndex; i < end; i++) {
-        const img = new window.Image();
-        img.src = getFramePath(i);
-        img.onload = () => {
-          if (isMounted) imagesRef.current[i] = img;
-        };
-      }
-      nextIndex = end;
-      if (nextIndex < TOTAL_FRAMES) {
-        if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-          window.requestIdleCallback(loadNextBatch, { timeout: 1000 });
-        } else {
-          setTimeout(loadNextBatch, 50);
+    const onSeeked = () => {
+      isSeekingRef.current = false;
+      if (pendingTimeRef.current !== null) {
+        const nextTime = pendingTimeRef.current;
+        pendingTimeRef.current = null;
+        if (Math.abs(video.currentTime - nextTime) >= 0.016) {
+          video.currentTime = nextTime;
         }
       }
     };
 
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      window.requestIdleCallback(loadNextBatch, { timeout: 1000 });
-    } else {
-      setTimeout(loadNextBatch, 80);
+    const onLoadedMetadata = () => {
+      video.pause();
+      video.currentTime = 0;
+    };
+
+    video.addEventListener("seeking", onSeeking);
+    video.addEventListener("seeked", onSeeked);
+    video.addEventListener("loadedmetadata", onLoadedMetadata);
+
+    if (video.readyState >= 1) {
+      video.pause();
+      if (video.currentTime !== 0 && targetTimeRef.current === 0) {
+        video.currentTime = 0;
+      }
     }
 
     return () => {
-      isMounted = false;
+      video.removeEventListener("seeking", onSeeking);
+      video.removeEventListener("seeked", onSeeked);
+      video.removeEventListener("loadedmetadata", onLoadedMetadata);
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
     };
-  }, [drawFrame]);
+  }, []);
 
   // GSAP ScrollTrigger Master Timeline (Pure CSS Sticky, Zero Pin-Spacer Conflict)
   useEffect(() => {
@@ -460,41 +408,46 @@ export const CinematicHeroExperience: React.FC = () => {
     // Initial paint at scroll progress 0.0
     updateHeroVisuals(0);
     updateChapterVisuals(0);
-    drawFrame(0);
 
     const ctx = gsap.context(() => {
       ScrollTrigger.create({
         trigger: container,
         start: "top top",
         end: "bottom bottom",
-        scrub: 0.05,
+        scrub: true,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
           const p = self.progress; // 0.0 to 1.0
 
           // Update Hero Zoom and UI fade
           updateHeroVisuals(p);
-
-          // Calculate precise frame index:
-          // progress 0.00 - 0.14 covers frames 0 - 22 (the camera zoom into the eye)
-          // progress 0.14 - 1.00 covers frames 23 - 199 (Imperial Hall, Royal Collection, Collector's Study)
-          let frameIndex = 0;
-          if (p <= 0.14) {
-            frameIndex = Math.floor((p / 0.14) * 22);
-          } else {
-            const galleryProgress = (p - 0.14) / 0.86;
-            frameIndex = 22 + Math.floor(galleryProgress * (TOTAL_FRAMES - 23));
-          }
-          frameIndex = Math.min(TOTAL_FRAMES - 1, Math.max(0, frameIndex));
-
-          drawFrame(frameIndex);
           updateChapterVisuals(p);
 
           // Synchronize 60 FPS video playback position with scroll progression
-          if (videoRef.current && Number.isFinite(videoRef.current.duration) && videoRef.current.duration > 0) {
-            const targetTime = p * videoRef.current.duration;
-            if (Math.abs(videoRef.current.currentTime - targetTime) > 0.05) {
-              videoRef.current.currentTime = targetTime;
+          const video = videoRef.current;
+          if (video && Number.isFinite(video.duration) && video.duration > 0) {
+            const duration = video.duration;
+            const eyeDuration = 1.1087;
+            let targetTime = 0;
+            if (p <= 0.14) {
+              targetTime = (p / 0.14) * Math.min(eyeDuration, duration);
+            } else {
+              const galleryProgress = (p - 0.14) / 0.86;
+              targetTime = eyeDuration + galleryProgress * Math.max(0, duration - eyeDuration);
+            }
+            targetTime = Math.max(0, Math.min(duration - 0.01, targetTime));
+            targetTimeRef.current = targetTime;
+
+            if (rafIdRef.current === null) {
+              rafIdRef.current = requestAnimationFrame(() => {
+                rafIdRef.current = null;
+                const currentTarget = targetTimeRef.current;
+                if (video.seeking) {
+                  pendingTimeRef.current = currentTarget;
+                } else if (Math.abs(video.currentTime - currentTarget) >= 0.016) {
+                  video.currentTime = currentTarget;
+                }
+              });
             }
           }
         },
@@ -504,7 +457,7 @@ export const CinematicHeroExperience: React.FC = () => {
     return () => {
       ctx.revert();
     };
-  }, [drawFrame, updateHeroVisuals, updateChapterVisuals]);
+  }, [updateHeroVisuals, updateChapterVisuals]);
 
   // Chapter navigation scroll helper
   const scrollToChapter = (chapter: ChapterConfig) => {
@@ -787,26 +740,18 @@ export const CinematicHeroExperience: React.FC = () => {
         className="sticky top-0 w-full h-[100svh] min-h-[680px] max-h-[1200px] overflow-hidden flex flex-col justify-between items-center bg-[#000000] z-20 select-none border-b border-luxury-champagne/15"
       >
         {/* ====================================================================
-            LAYER 0: 60 FPS Background Video & High-Performance Canvas Stage
+            LAYER 0: 60 FPS Background Video Stage (Single Source of Moving Footage)
            ==================================================================== */}
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden pointer-events-none">
           <video
             ref={videoRef}
             src="/videos/Generated_video_60fps.mp4"
-            autoPlay
+            poster="/hero/hero-base.jpg"
             muted
-            loop
             playsInline
             preload="auto"
             aria-hidden="true"
             className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
-            style={{
-              filter: "contrast(1.04) brightness(0.96)",
-            }}
-          />
-          <canvas
-            ref={canvasRef}
-            className="relative w-full h-full object-cover object-center pointer-events-none select-none"
             style={{
               filter: "contrast(1.04) brightness(0.96)",
             }}

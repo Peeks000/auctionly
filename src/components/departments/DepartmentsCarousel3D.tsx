@@ -125,14 +125,16 @@ export const DepartmentsCarousel3D: React.FC = () => {
     return () => window.removeEventListener("resize", checkWidth);
   }, []);
 
-  // Ambient Gold Dust Particles (Pause when outside viewport)
+  // Ambient Gold Dust Particles (Active ONLY when section is visible in viewport)
   useEffect(() => {
     const canvas = particleCanvasRef.current;
+    const container = containerRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let animId: number;
+    let animId: number = 0;
+    let isVisible = false;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
@@ -141,7 +143,7 @@ export const DepartmentsCarousel3D: React.FC = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
     };
-    window.addEventListener("resize", onResize);
+    window.addEventListener("resize", onResize, { passive: true });
 
     // Particle pool with multi-depth layers
     const PARTICLE_COUNT = 38;
@@ -158,10 +160,7 @@ export const DepartmentsCarousel3D: React.FC = () => {
 
     let lastTime = performance.now();
     const render = (time: number) => {
-      if (!isSectionVisibleRef.current) {
-        animId = requestAnimationFrame(render);
-        return;
-      }
+      if (!isVisible) return;
 
       const dt = Math.min((time - lastTime) / 1000, 0.1);
       lastTime = time;
@@ -189,10 +188,32 @@ export const DepartmentsCarousel3D: React.FC = () => {
       animId = requestAnimationFrame(render);
     };
 
-    animId = requestAnimationFrame(render);
+    let observer: IntersectionObserver | null = null;
+    if (container && typeof IntersectionObserver !== "undefined") {
+      observer = new IntersectionObserver(
+        (entries) => {
+          isVisible = entries[0].isIntersecting;
+          if (isVisible) {
+            lastTime = performance.now();
+            if (!animId) animId = requestAnimationFrame(render);
+          } else {
+            if (animId) {
+              cancelAnimationFrame(animId);
+              animId = 0;
+            }
+          }
+        },
+        { threshold: 0.01 }
+      );
+      observer.observe(container);
+    } else {
+      isVisible = true;
+      animId = requestAnimationFrame(render);
+    }
 
     return () => {
-      cancelAnimationFrame(animId);
+      if (animId) cancelAnimationFrame(animId);
+      if (observer) observer.disconnect();
       window.removeEventListener("resize", onResize);
     };
   }, []);
